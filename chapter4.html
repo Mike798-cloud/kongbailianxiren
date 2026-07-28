@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>空白联系人 · 第四章：空白来电</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--phone-w:380px;--phone-h:760px;
+--c-bg:#0f1115;--c-surface:#1a1d24;--c-surface2:#222630;
+--c-text:#e4e4e7;--c-text2:#9ca3af;--c-text3:#6b7280;
+--c-blue:#3b82f6;--c-green:#22c55e;--c-red:#ef4444;
+--c-amber:#f59e0b;--c-purple:#a855f7;--c-pink:#ec4899;
+--c-warm:#f0a060;--c-cold:#6080a0;
+}
+html,body{height:100%;background:var(--c-bg);font-family:-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;color:var(--c-text);overflow-y:auto}
+body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px 0}
+
+/* ===== 手机框架 ===== */
+#phone-frame{width:var(--phone-w);height:var(--phone-h);background:#000;border-radius:42px;padding:10px;box-shadow:0 0 60px rgba(0,0,0,0.5),0 0 0 2px #2a2a2a,0 0 120px rgba(59,130,246,0.05);position:relative;overflow:hidden;margin:20px auto}
+#phone-screen{width:100%;height:100%;background:var(--c-surface);border-radius:34px;overflow-y:auto;overflow-x:hidden;position:relative}
+#phone-screen::-webkit-scrollbar{width:0}
+
+/* ===== 状态栏（纯CSS图标） ===== */
+.status-bar{height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:13px;font-weight:600;color:var(--c-text);background:var(--c-surface);position:sticky;top:0;z-index:50;flex-shrink:0}
+.status-icons{display:flex;gap:6px;align-items:center}
+.signal-bars{display:flex;align-items:flex-end;gap:1.5px;height:10px}
+.signal-bars span{width:2.5px;background:var(--c-text);border-radius:1px}
+.signal-bars span:nth-child(1){height:3px}
+.signal-bars span:nth-child(2){height:5px}
+.signal-bars span:nth-child(3){height:7px}
+.signal-bars span:nth-child(4){height:10px}
+.wifi-icon{width:15px;height:11px;position:relative;overflow:hidden}
+.wifi-icon::before{content:"";position:absolute;width:15px;height:15px;border-radius:50%;border:1.5px solid var(--c-text);border-color:var(--c-text) transparent transparent transparent;bottom:-7.5px;left:0}
+.wifi-icon::after{content:"";position:absolute;width:7px;height:7px;border-radius:50%;border:1.5px solid var(--c-text);border-color:var(--c-text) transparent transparent transparent;bottom:-3.5px;left:50%;transform:translateX(-50%);background:radial-gradient(circle at 50% 100%,var(--c-text) 0%,var(--c-text) 30%,transparent 30%)}
+.battery{width:22px;height:11px;border:1px solid var(--c-text2);border-radius:3px;position:relative;padding:1px}
+.battery::after{content:"";position:absolute;right:-3px;top:3px;width:2px;height:5px;background:var(--c-text2);border-radius:0 1px 1px 0}
+.battery-fill{width:42%;height:100%;background:var(--c-amber);border-radius:1px}
+
+/* ===== 章节过渡 ===== */
+#chapter-transition{position:absolute;inset:0;z-index:200;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center}
+#chapter-transition.show{display:flex;animation:fadeIn 0.8s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.chapter-num{font-size:12px;color:var(--c-text3);letter-spacing:6px;margin-bottom:16px}
+.chapter-name{font-size:24px;letter-spacing:4px;font-weight:300;margin-bottom:8px}
+.chapter-sub{font-size:12px;color:var(--c-amber);letter-spacing:2px;margin-bottom:30px;opacity:0.8}
+.chapter-bar{width:200px;height:1px;background:var(--c-surface2);position:relative;overflow:hidden}
+.chapter-bar-fill{position:absolute;left:0;top:0;height:100%;width:0;background:var(--c-blue);transition:width 2.5s ease}
+
+/* ===== 通用屏幕容器 ===== */
+.screen{display:none;flex-direction:column;height:calc(100% - 36px);position:relative}
+.screen.show{display:flex}
+.screen-header{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--c-surface2);background:var(--c-surface);flex-shrink:0}
+.screen-back{font-size:22px;color:var(--c-blue);cursor:pointer;background:none;border:none;font-family:inherit;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:background 0.2s;line-height:1}
+.screen-back:hover{background:rgba(59,130,246,0.1)}
+.screen-title{font-size:16px;font-weight:600}
+.screen-body{flex:1;overflow-y:auto;padding:16px}
+.screen-body::-webkit-scrollbar{width:0}
+
+/* ===== 进度条 ===== */
+.progress-bar{height:3px;background:var(--c-surface2);position:relative;overflow:hidden;flex-shrink:0}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--c-blue),var(--c-purple));transition:width 0.8s ease;width:0%}
+
+/* ===== 章节开场叙述 ===== */
+#intro-screen{display:none;flex-direction:column;height:calc(100% - 36px);align-items:center;justify-content:center;padding:40px 28px;text-align:center;background:radial-gradient(ellipse at center,rgba(59,130,246,0.04) 0%,transparent 70%),var(--c-surface)}
+#intro-screen.show{display:flex}
+.intro-glow{position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,0.08) 0%,transparent 70%);animation:introPulse 5s ease-in-out infinite;pointer-events:none}
+@keyframes introPulse{0%,100%{opacity:0.4;transform:scale(1)}50%{opacity:0.8;transform:scale(1.15)}}
+.intro-text{font-size:14px;color:var(--c-text2);line-height:2.4;margin-bottom:32px;position:relative;z-index:1}
+.intro-text .keyword{color:var(--c-red);font-weight:600}
+.intro-text .calm{color:var(--c-blue)}
+.intro-text .fear{color:var(--c-amber)}
+.intro-btn{padding:14px 48px;background:linear-gradient(135deg,var(--c-blue),var(--c-purple));color:#fff;border:none;border-radius:24px;font-size:14px;letter-spacing:3px;cursor:pointer;font-family:inherit;transition:all 0.3s;position:relative;z-index:1;box-shadow:0 4px 20px rgba(59,130,246,0.3)}
+.intro-btn:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(59,130,246,0.4)}
+.intro-hint{margin-top:16px;font-size:11px;color:var(--c-text3);letter-spacing:1px;position:relative;z-index:1}
+
+/* ===== iOS 桌面 ===== */
+#home-screen{display:none;flex-direction:column;height:calc(100% - 36px);background:linear-gradient(180deg,#1a1d24 0%,#14171f 100%)}
+#home-screen.show{display:flex}
+.home-header{padding:16px 20px 8px;flex-shrink:0}
+.home-date{font-size:11px;color:var(--c-text3);letter-spacing:1px;text-transform:uppercase}
+.home-title{font-size:13px;color:var(--c-text2);margin-top:2px}
+
+.app-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 0;padding:16px 12px;flex:1;align-content:flex-start}
+.app-cell{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:transform 0.2s}
+.app-cell:active{transform:scale(0.9)}
+.app-cell.disabled{opacity:0.5}
+.app-cell-label{font-size:10px;color:var(--c-text);text-align:center;line-height:1.2;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-cell-badge{position:absolute;top:-2px;right:6px;background:var(--c-red);color:#fff;font-size:9px;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;font-weight:600}
+
+/* ===== iOS App 图标（纯CSS） ===== */
+.ios-icon{width:48px;height:48px;border-radius:12px;position:relative;overflow:hidden;flex-shrink:0}
+/* 通讯录 */
+.ios-icon.ic-contacts{background:linear-gradient(135deg,#8e8e93,#636366)}
+.ios-icon.ic-contacts::before{content:"";position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:9px;left:50%;transform:translateX(-50%)}
+.ios-icon.ic-contacts::after{content:"";position:absolute;width:26px;height:14px;background:#fff;border-radius:13px 13px 0 0;bottom:7px;left:50%;transform:translateX(-50%)}
+/* 短信 */
+.ios-icon.ic-messages{background:linear-gradient(135deg,#34c759,#28a745)}
+.ios-icon.ic-messages::before{content:"";position:absolute;width:26px;height:20px;background:#fff;border-radius:8px;top:10px;left:50%;transform:translateX(-50%)}
+.ios-icon.ic-messages::after{content:"";position:absolute;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid #fff;top:26px;left:40%}
+/* 相册 */
+.ios-icon.ic-photos{background:conic-gradient(from 0deg,#ff6b6b,#ffd93d,#6bcf7f,#4d9de0,#9b59b6,#ff6b6b)}
+.ios-icon.ic-photos::before{content:"";position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.9}
+/* 日历 */
+.ios-icon.ic-calendar{background:#fff}
+.ios-icon.ic-calendar::before{content:"17";position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:22px;font-weight:300;color:#ff3b30;line-height:1}
+.ios-icon.ic-calendar::after{content:"";position:absolute;top:0;left:0;right:0;height:12px;background:#ff3b30}
+/* 天气 */
+.ios-icon.ic-weather{background:linear-gradient(135deg,#4a90d9,#2d6cb5)}
+.ios-icon.ic-weather::before{content:"";position:absolute;width:16px;height:16px;background:#ffd700;border-radius:50%;top:8px;right:8px;box-shadow:0 0 8px rgba(255,215,0,0.5)}
+.ios-icon.ic-weather::after{content:"";position:absolute;width:24px;height:12px;background:#fff;border-radius:8px;bottom:10px;left:8px;box-shadow:4px -4px 0 -2px #fff}
+/* 时钟 */
+.ios-icon.ic-clock{background:#000}
+.ios-icon.ic-clock::before{content:"";position:absolute;width:30px;height:30px;border:2px solid #fff;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%)}
+.ios-icon.ic-clock::after{content:"";position:absolute;width:2px;height:12px;background:#fff;top:10px;left:50%;transform-origin:bottom center;transform:translateX(-50%) rotate(45deg)}
+/* 备忘录 */
+.ios-icon.ic-notes{background:linear-gradient(180deg,#fffbe6 0%,#ffe082 100%)}
+.ios-icon.ic-notes::before{content:"";position:absolute;left:10px;right:10px;top:12px;height:2px;background:#f5a623;box-shadow:0 6px 0 #f5a623,0 12px 0 #f5a623,0 18px 0 #f5a623;border-radius:1px}
+/* 邮件 */
+.ios-icon.ic-mail{background:linear-gradient(135deg,#34aadc,#2980b9)}
+.ios-icon.ic-mail::before{content:"";position:absolute;width:28px;height:20px;background:#fff;border-radius:4px;top:50%;left:50%;transform:translate(-50%,-50%)}
+.ios-icon.ic-mail::after{content:"";position:absolute;width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:10px solid #2980b9;top:14px;left:50%;transform:translateX(-50%)}
+/* 计算器 */
+.ios-icon.ic-calc{background:linear-gradient(135deg,#3a3a3c,#1c1c1e)}
+.ios-icon.ic-calc::before{content:"";position:absolute;width:24px;height:20px;top:10px;left:50%;transform:translateX(-50%);background:radial-gradient(circle 3px at 4px 4px,#7a7a7c 100%,transparent 100%),radial-gradient(circle 3px at 12px 4px,#7a7a7c 100%,transparent 100%),radial-gradient(circle 3px at 20px 4px,#7a7a7c 100%,transparent 100%),radial-gradient(circle 3px at 4px 12px,#7a7a7c 100%,transparent 100%),radial-gradient(circle 3px at 12px 12px,#7a7a7c 100%,transparent 100%),radial-gradient(circle 3px at 20px 12px,#ff9500 100%,transparent 100%)}
+/* 相机 */
+.ios-icon.ic-camera{background:linear-gradient(135deg,#3a3a3c,#1c1c1e)}
+.ios-icon.ic-camera::before{content:"";position:absolute;width:22px;height:16px;background:#666;border-radius:4px;top:14px;left:50%;transform:translateX(-50%)}
+.ios-icon.ic-camera::after{content:"";position:absolute;width:10px;height:10px;background:#1c1c1e;border:2px solid #aaa;border-radius:50%;top:15px;left:50%;transform:translateX(-50%)}
+/* 音乐 */
+.ios-icon.ic-music{background:linear-gradient(135deg,#ff6482,#e91e63)}
+.ios-icon.ic-music::before{content:"";position:absolute;width:10px;height:10px;background:#fff;border-radius:50%;bottom:11px;left:13px}
+.ios-icon.ic-music::after{content:"";position:absolute;width:2.5px;height:20px;background:#fff;bottom:18px;left:29px;transform:rotate(20deg);transform-origin:bottom center;border-radius:2px}
+/* 地图 */
+.ios-icon.ic-maps{background:linear-gradient(135deg,#34c759,#28a745)}
+.ios-icon.ic-maps::before{content:"";position:absolute;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:18px solid #fff;top:8px;left:50%;transform:translateX(-50%);border-radius:2px}
+.ios-icon.ic-maps::after{content:"";position:absolute;width:6px;height:6px;background:#34c759;border-radius:50%;top:12px;left:50%;transform:translateX(-50%)}
+/* 设置 */
+.ios-icon.ic-settings{background:linear-gradient(135deg,#8e8e93,#48484a)}
+.ios-icon.ic-settings::before{content:"";position:absolute;width:28px;height:28px;top:50%;left:50%;transform:translate(-50%,-50%);background:radial-gradient(circle 6px at center,transparent 100%,transparent 100%);border:3px solid #fff;border-radius:50%}
+.ios-icon.ic-settings::after{content:"";position:absolute;width:16px;height:16px;border:2.5px solid #fff;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%)}
+/* 浏览器 */
+.ios-icon.ic-browser{background:linear-gradient(135deg,#007aff,#005ec4)}
+.ios-icon.ic-browser::before{content:"";position:absolute;width:28px;height:28px;border:2px solid #fff;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%)}
+.ios-icon.ic-browser::after{content:"";position:absolute;width:28px;height:2px;background:#fff;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 -7px 0 -1px #fff,0 7px 0 -1px #fff}
+/* App Store */
+.ios-icon.ic-store{background:linear-gradient(135deg,#007aff,#005ec4)}
+.ios-icon.ic-store::before{content:"A";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:28px;font-weight:700;color:#fff;font-family:Georgia,serif}
+/* 健康 */
+.ios-icon.ic-health{background:#fff}
+.ios-icon.ic-health::before{content:"";position:absolute;width:14px;height:13px;background:#ff3b30;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-45deg);border-radius:50% 50% 0 0}
+.ios-icon.ic-health::after{content:"";position:absolute;width:14px;height:13px;background:#ff3b30;top:50%;left:50%;transform:translate(-50%,-50%) rotate(45deg);border-radius:50% 50% 0 0}
+/* 钱包 */
+.ios-icon.ic-wallet{background:linear-gradient(135deg,#1c1c1e,#000)}
+.ios-icon.ic-wallet::before{content:"";position:absolute;width:28px;height:18px;background:linear-gradient(135deg,#ff9500,#ff6b00);border-radius:3px;top:50%;left:50%;transform:translate(-50%,-50%)}
+.ios-icon.ic-wallet::after{content:"";position:absolute;width:28px;height:3px;background:rgba(0,0,0,0.3);top:50%;left:50%;transform:translate(-50%,calc(-50% - 6px));border-radius:2px}
+/* 文件 */
+.ios-icon.ic-files{background:linear-gradient(135deg,#007aff,#005ec4)}
+.ios-icon.ic-files::before{content:"";position:absolute;width:26px;height:20px;background:#fff;border-radius:2px;top:50%;left:50%;transform:translate(-50%,-50%);clip-path:polygon(0 20%,30% 20%,35% 10%,100% 10%,100% 100%,0 100%)}
+/* 图书 */
+.ios-icon.ic-books{background:linear-gradient(135deg,#ff9500,#ff6b00)}
+.ios-icon.ic-books::before{content:"";position:absolute;width:20px;height:24px;background:#fff;border-radius:2px 0 0 2px;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:6px 0 0 -1px #ff6b00,12px 0 0 -1px #fff}
+/* 播客 */
+.ios-icon.ic-podcast{background:linear-gradient(135deg,#9b59b6,#7d3c98)}
+.ios-icon.ic-podcast::before{content:"";position:absolute;width:8px;height:8px;background:#fff;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%)}
+.ios-icon.ic-podcast::after{content:"";position:absolute;width:18px;height:18px;border:2px solid #fff;border-radius:50%;border-color:#fff transparent transparent transparent;top:50%;left:50%;transform:translate(-50%,-30%)}
+/* 指南针 */
+.ios-icon.ic-compass{background:linear-gradient(135deg,#1c1c1e,#000)}
+.ios-icon.ic-compass::before{content:"";position:absolute;width:26px;height:26px;border:2px solid #fff;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%)}
+.ios-icon.ic-compass::after{content:"";position:absolute;width:0;height:0;border-left:3px solid transparent;border-right:3px solid transparent;border-bottom:10px solid #ff3b30;top:50%;left:50%;transform:translate(-50%,-60%) rotate(30deg)}
+/* 语音备忘录 */
+.ios-icon.ic-voice{background:linear-gradient(135deg,#1c1c1e,#000)}
+.ios-icon.ic-voice::before{content:"";position:absolute;width:20px;height:14px;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(90deg,#fff 0%,#fff 10%,transparent 10%,transparent 16%,#fff 16%,#fff 30%,transparent 30%,transparent 36%,#fff 36%,#fff 55%,transparent 55%,transparent 61%,#fff 61%,#fff 80%,transparent 80%,transparent 86%,#fff 86%,#fff 100%)}
+/* 股票 */
+.ios-icon.ic-stocks{background:linear-gradient(135deg,#1c1c1e,#000)}
+.ios-icon.ic-stocks::before{content:"";position:absolute;width:28px;height:2px;background:#34c759;top:14px;left:50%;transform:translateX(-50%) rotate(-30deg);transform-origin:center}
+.ios-icon.ic-stocks::after{content:"";position:absolute;width:28px;height:2px;background:#ff3b30;top:30px;left:50%;transform:translateX(-50%) rotate(30deg);transform-origin:center}
+/* 微信 */
+.ios-icon.ic-wechat{background:linear-gradient(135deg,#07c160,#06ad56)}
+.ios-icon.ic-wechat::before{content:"";position:absolute;width:18px;height:14px;background:#fff;border-radius:6px;top:10px;left:7px}
+.ios-icon.ic-wechat::after{content:"";position:absolute;width:14px;height:10px;background:#c7ecd6;border-radius:5px;bottom:9px;right:8px}
+/* Home */
+.ios-icon.ic-homekit{background:linear-gradient(135deg,#007aff,#005ec4)}
+.ios-icon.ic-homekit::before{content:"";position:absolute;width:24px;height:20px;background:#fff;clip-path:polygon(50% 0,100% 50%,90% 50%,90% 100%,10% 100%,10% 50%,0 50%);top:50%;left:50%;transform:translate(-50%,-50%)}
+
+/* ===== 通讯录黑名单 ===== */
+.contact-tabs{display:flex;border-bottom:1px solid var(--c-surface2);flex-shrink:0;background:var(--c-surface)}
+.contact-tab{flex:1;padding:12px 0;text-align:center;font-size:13px;color:var(--c-text3);cursor:pointer;transition:all 0.3s;position:relative;letter-spacing:1px}
+.contact-tab.active{color:var(--c-blue)}
+.contact-tab.active::after{content:"";position:absolute;bottom:0;left:25%;right:25%;height:2px;background:var(--c-blue);border-radius:1px}
+.contact-tab .tab-badge{display:inline-block;background:var(--c-red);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:3px;vertical-align:top}
+
+.blacklist-item{background:var(--c-surface2);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:all 0.3s;border:1px solid transparent}
+.blacklist-item.open{border-color:rgba(59,130,246,0.2)}
+.bl-header{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;transition:background 0.2s}
+.bl-header:hover{background:rgba(255,255,255,0.03)}
+.bl-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;position:relative}
+.bl-avatar::after{content:"";position:absolute;bottom:-1px;right:-1px;width:14px;height:14px;background:var(--c-red);border:2px solid var(--c-surface2);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.bl-avatar .ban-line{position:absolute;width:40px;height:2px;background:var(--c-red);transform:rotate(-45deg);border-radius:1px;opacity:0.8}
+.bl-info{flex:1;min-width:0}
+.bl-name{font-size:14px;font-weight:500}
+.bl-time{font-size:11px;color:var(--c-text3);margin-top:2px}
+.bl-arrow{color:var(--c-text3);font-size:14px;transition:transform 0.3s}
+.blacklist-item.open .bl-arrow{transform:rotate(90deg)}
+.bl-detail{max-height:0;overflow:hidden;transition:max-height 0.5s ease}
+.blacklist-item.open .bl-detail{max-height:600px}
+.bl-detail-inner{padding:0 16px 16px;border-top:1px solid rgba(255,255,255,0.05);padding-top:12px;margin-top:4px}
+.bl-remark-label{font-size:11px;color:var(--c-text3);margin-bottom:4px;letter-spacing:1px}
+.bl-remark{font-size:13px;color:var(--c-text2);line-height:1.7;padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border-left:3px solid var(--c-amber);margin-bottom:8px}
+.bl-remark.cult{border-left-color:var(--c-red);color:var(--c-text2)}
+.bl-cult-tag{display:inline-block;padding:2px 8px;background:rgba(239,68,68,0.12);color:var(--c-red);font-size:10px;border-radius:4px;margin-bottom:8px;letter-spacing:1px}
+.bl-action{display:flex;align-items:center;gap:6px;padding:10px 12px;background:rgba(59,130,246,0.08);border-radius:8px;font-size:12px;color:var(--c-blue);cursor:pointer;margin-top:6px;transition:background 0.2s;border:1px solid rgba(59,130,246,0.15)}
+.bl-action:hover{background:rgba(59,130,246,0.15)}
+.bl-damaged{font-size:12px;color:var(--c-text3);padding:10px 12px;background:rgba(168,85,247,0.08);border-radius:8px;border-left:3px solid var(--c-purple);line-height:1.7}
+.bl-damaged-hint{margin-top:8px;font-size:11px;color:var(--c-purple);font-style:italic;line-height:1.7;padding:10px;background:rgba(168,85,247,0.05);border-radius:6px;text-align:center}
+
+/* ===== 心情日记弹窗 ===== */
+.mood-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.7);z-index:300;display:none;align-items:flex-end;justify-content:center;border-radius:34px}
+.mood-overlay.show{display:flex;animation:fadeIn 0.3s}
+.mood-sheet{width:100%;background:var(--c-surface);border-radius:20px 20px 0 0;padding:24px 20px;max-height:80%;overflow-y:auto;animation:slideUp 0.4s cubic-bezier(0.22,1,0.36,1)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mood-date{text-align:center;font-size:12px;color:var(--c-amber);letter-spacing:2px;margin-bottom:4px}
+.mood-title{text-align:center;font-size:16px;font-weight:600;margin-bottom:20px}
+.mood-section{margin-bottom:20px}
+.mood-section-label{font-size:11px;color:var(--c-text3);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase}
+.mood-original{font-size:14px;color:var(--c-text);line-height:2;padding:16px;background:var(--c-surface2);border-radius:10px;font-style:italic;border-left:3px solid var(--c-red)}
+.mood-reflection{font-size:13px;color:var(--c-warm);line-height:2;padding:16px;background:rgba(240,160,96,0.06);border-radius:10px;border-left:3px solid var(--c-warm)}
+.mood-close{display:block;margin:20px auto 0;padding:10px 40px;background:var(--c-surface2);border:none;color:var(--c-text);border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit;letter-spacing:2px}
+
+/* ===== 短信回收站 ===== */
+.recycle-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.recycle-title{font-size:14px;color:var(--c-text2)}
+.recycle-count{font-size:12px;color:var(--c-text3);background:var(--c-surface2);padding:2px 10px;border-radius:10px}
+.restore-progress{font-size:12px;color:var(--c-text3);text-align:center;margin-bottom:12px;min-height:16px}
+.sms-message{background:var(--c-surface2);border-radius:12px;padding:14px 16px;margin-bottom:8px;opacity:0.25;transform:translateY(10px);transition:all 0.6s ease;position:relative;overflow:hidden;filter:blur(0.5px)}
+.sms-message.restored{opacity:1;transform:translateY(0);filter:blur(0)}
+.sms-message.restoring{animation:smsRestore 0.6s ease forwards}
+@keyframes smsRestore{0%{opacity:0.25;transform:translateY(15px);filter:blur(2px)}100%{opacity:1;transform:translateY(0);filter:blur(0)}}
+.sms-date{font-size:11px;color:var(--c-amber);margin-bottom:6px;letter-spacing:1px}
+.sms-sender{font-size:12px;font-weight:500;margin-bottom:4px;color:var(--c-text2)}
+.sms-content{font-size:14px;line-height:1.8;color:var(--c-text)}
+.sms-content.tearful{border-left:3px solid rgba(245,158,11,0.3);padding-left:10px}
+.restore-btn{display:block;width:100%;padding:12px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);color:var(--c-blue);border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit;letter-spacing:1px;transition:all 0.3s;margin-bottom:16px}
+.restore-btn:hover:not(:disabled){background:rgba(59,130,246,0.2);border-color:var(--c-blue)}
+.restore-btn:disabled{opacity:0.4;cursor:not-allowed}
+.sms-summary{padding:20px;text-align:center;display:none;animation:fadeUp 0.8s ease forwards}
+.sms-summary.show{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.summary-icon{font-size:36px;margin-bottom:12px}
+.summary-title{font-size:15px;font-weight:600;margin-bottom:8px;color:var(--c-amber)}
+.summary-text{font-size:13px;color:var(--c-text2);line-height:2}
+
+/* ===== 人物关系图 ===== */
+.relation-diagram{position:relative;padding:20px 0;min-height:420px}
+.relation-card{position:absolute;background:var(--c-surface2);border-radius:10px;padding:10px 14px;text-align:center;min-width:80px;transition:all 0.3s;z-index:2;cursor:pointer}
+.relation-card:hover{transform:scale(1.05);z-index:3}
+.relation-card.protagonist{border:2px solid var(--c-blue);background:rgba(59,130,246,0.1)}
+.relation-card.family{border:1px solid rgba(245,158,11,0.3)}
+.relation-card.villain{border:1px solid rgba(239,68,68,0.3)}
+.relation-card.mystery{border:1px dashed var(--c-purple);background:rgba(168,85,247,0.08)}
+.card-emoji{font-size:22px;margin-bottom:4px}
+.card-name{font-size:13px;font-weight:500}
+.card-role{font-size:10px;color:var(--c-text3);margin-top:2px}
+.relation-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;padding:12px;background:var(--c-surface2);border-radius:8px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--c-text3)}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+.relation-narrative{margin-top:16px;padding:14px;background:rgba(59,130,246,0.06);border-radius:10px;border-left:3px solid var(--c-blue);font-size:13px;color:var(--c-text2);line-height:1.8}
+.relation-detail-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.8);z-index:300;display:none;align-items:center;justify-content:center;padding:20px;border-radius:34px}
+.relation-detail-overlay.show{display:flex;animation:fadeIn 0.3s}
+.relation-detail-card{background:var(--c-surface);border-radius:16px;padding:24px 20px;max-width:320px;animation:slideUp 0.4s ease}
+.relation-detail-title{font-size:16px;font-weight:600;margin-bottom:12px;text-align:center}
+.relation-detail-text{font-size:13px;color:var(--c-text2);line-height:2;text-align:left}
+.relation-detail-close{display:block;margin:20px auto 0;padding:8px 32px;background:var(--c-surface2);border:none;color:var(--c-text);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit}
+
+/* ===== 备忘录（愿望清单） ===== */
+.wish-list{padding:8px 0}
+.wish-intro{font-size:12px;color:var(--c-text3);line-height:1.8;margin-bottom:16px;padding:12px;background:rgba(245,158,11,0.06);border-radius:8px;border-left:3px solid var(--c-amber)}
+.wish-item{padding:14px 16px;background:var(--c-surface2);border-radius:10px;margin-bottom:8px;font-size:14px;color:var(--c-text);line-height:1.7;display:flex;align-items:flex-start;gap:10px;transition:all 0.3s}
+.wish-item:hover{background:rgba(255,255,255,0.05)}
+.wish-checkbox{width:18px;height:18px;border:2px solid var(--c-text3);border-radius:50%;flex-shrink:0;margin-top:2px;position:relative}
+.wish-item.done .wish-checkbox{border-color:var(--c-green);background:var(--c-green)}
+.wish-item.done .wish-checkbox::after{content:"";position:absolute;top:3px;left:5px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.wish-item.done .wish-text{color:var(--c-text3);text-decoration:line-through}
+.wish-text{flex:1}
+.wish-faded{color:var(--c-text3);font-style:italic;opacity:0.5}
+
+/* ===== 天气 ===== */
+.weather-screen{flex:1;overflow-y:auto;padding:0}
+.weather-bg{background:linear-gradient(180deg,#4a6a8a 0%,#2a4a6a 100%);padding:40px 20px;text-align:center}
+.weather-city{font-size:22px;font-weight:300;margin-bottom:4px}
+.weather-temp{font-size:64px;font-weight:200;margin:8px 0}
+.weather-cond{font-size:14px;color:rgba(255,255,255,0.7)}
+.weather-range{font-size:13px;color:rgba(255,255,255,0.5);margin-top:4px}
+.weather-sun{width:60px;height:60px;margin:20px auto 0;position:relative}
+.weather-sun::before{content:"";position:absolute;width:40px;height:40px;background:rgba(255,255,255,0.15);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%)}
+.weather-sun::after{content:"";position:absolute;width:30px;height:30px;background:#ffd700;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 0 20px rgba(255,215,0,0.4)}
+.weather-cloud{width:80px;height:30px;margin:10px auto 0;position:relative}
+.weather-cloud::before{content:"";position:absolute;width:50px;height:24px;background:rgba(255,255,255,0.8);border-radius:24px;top:0;left:0}
+.weather-cloud::after{content:"";position:absolute;width:30px;height:30px;background:rgba(255,255,255,0.8);border-radius:50%;top:-10px;left:25px}
+.weather-notice{padding:16px;margin:16px;background:rgba(245,158,11,0.1);border-radius:10px;border-left:3px solid var(--c-amber);font-size:13px;color:var(--c-amber);line-height:1.8;text-align:center}
+.weather-hourly{display:flex;justify-content:space-around;padding:16px;background:rgba(255,255,255,0.05);margin:0 16px 16px;border-radius:12px}
+.weather-hour{text-align:center;font-size:11px;color:rgba(255,255,255,0.6)}
+.weather-hour .h-icon{font-size:20px;margin:6px 0}
+.weather-hour .h-temp{font-size:13px;color:#fff}
+
+/* ===== 音乐 ===== */
+.music-now-playing{background:var(--c-surface2);border-radius:14px;padding:20px;margin-bottom:16px}
+.music-art{width:100px;height:100px;border-radius:14px;margin:0 auto 16px;background:linear-gradient(135deg,var(--c-pink),var(--c-purple));display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.music-art::before{content:"";position:absolute;width:50px;height:50px;background:rgba(255,255,255,0.15);border-radius:50%}
+.music-art::after{content:"";position:absolute;width:14px;height:14px;background:rgba(255,255,255,0.3);border-radius:50%}
+.music-art .note-shape{position:absolute;width:8px;height:8px;background:#fff;border-radius:50%;bottom:30px;left:30px;z-index:1}
+.music-art .note-stem{position:absolute;width:3px;height:20px;background:#fff;bottom:36px;left:35px;transform:rotate(15deg);border-radius:2px;z-index:1}
+.music-title{text-align:center;font-size:15px;font-weight:600;margin-bottom:4px}
+.music-artist{text-align:center;font-size:12px;color:var(--c-text3);margin-bottom:16px}
+.music-progress{height:3px;background:var(--c-surface);border-radius:2px;overflow:hidden;margin-bottom:6px}
+.music-progress-fill{height:100%;width:30%;background:var(--c-pink);border-radius:2px}
+.music-times{display:flex;justify-content:space-between;font-size:10px;color:var(--c-text3)}
+.music-controls{display:flex;justify-content:center;align-items:center;gap:24px;margin-top:16px}
+.music-ctrl-btn{width:40px;height:40px;border-radius:50%;background:var(--c-surface);border:none;color:var(--c-text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.music-ctrl-btn.play{width:48px;height:48px;background:var(--c-pink);color:#fff;font-size:20px}
+.music-ctrl-btn:hover{transform:scale(1.1)}
+.music-playlist-label{font-size:12px;color:var(--c-text3);margin-bottom:8px;letter-spacing:1px}
+.music-track{display:flex;align-items:center;gap:12px;padding:12px;background:var(--c-surface2);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all 0.2s}
+.music-track:hover{background:rgba(236,72,153,0.08)}
+.music-track.playing{border-left:3px solid var(--c-pink)}
+.music-track-num{font-size:12px;color:var(--c-text3);width:20px}
+.music-track-info{flex:1}
+.music-track-name{font-size:13px;font-weight:500}
+.music-track-artist{font-size:11px;color:var(--c-text3);margin-top:2px}
+.music-track-dur{font-size:11px;color:var(--c-text3)}
+
+/* ===== 计算器 ===== */
+.calc-display{background:var(--c-bg);padding:24px 20px;text-align:right;font-size:48px;font-weight:200;color:var(--c-text);min-height:80px;display:flex;align-items:flex-end;justify-content:flex-end;overflow:hidden}
+.calc-buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--c-bg);flex:1}
+.calc-btn{background:var(--c-surface2);border:none;color:var(--c-text);font-size:22px;font-family:inherit;cursor:pointer;transition:all 0.1s;display:flex;align-items:center;justify-content:center;min-height:60px;font-weight:400}
+.calc-btn:active{background:var(--c-surface);transform:scale(0.96)}
+.calc-btn.op{background:var(--c-amber);color:#fff;font-size:24px}
+.calc-btn.op:active{background:#d97e0a}
+.calc-btn.fn{background:var(--c-surface);color:var(--c-text2);font-size:18px}
+.calc-btn.fn:active{background:#2a2a2e}
+.calc-btn.zero{grid-column:span 2;border-radius:0 0 0 0}
+
+/* ===== 空白联系人悬念 ===== */
+.suspense-overlay{position:absolute;inset:0;z-index:250;background:rgba(0,0,0,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;border-radius:34px}
+.suspense-overlay.show{display:flex;animation:fadeIn 0.8s}
+.suspense-icon{width:80px;height:80px;border:2px solid var(--c-purple);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:24px;position:relative;animation:suspensePulse 3s ease-in-out infinite}
+@keyframes suspensePulse{0%,100%{box-shadow:0 0 20px rgba(168,85,247,0.2);transform:scale(1)}50%{box-shadow:0 0 40px rgba(168,85,247,0.4);transform:scale(1.05)}}
+.suspense-icon::before{content:"?";font-size:36px;color:var(--c-purple);font-weight:300}
+.suspense-title{font-size:18px;color:var(--c-purple);margin-bottom:16px;letter-spacing:2px}
+.suspense-text{font-size:14px;color:var(--c-text2);line-height:2;max-width:280px;margin-bottom:30px}
+.suspense-text .shimmer{color:var(--c-purple);font-style:italic;animation:mysteryShimmer 2s ease-in-out infinite}
+@keyframes mysteryShimmer{0%,100%{opacity:0.6}50%{opacity:1}}
+.suspense-btn{padding:12px 40px;background:transparent;border:1px solid var(--c-purple);color:var(--c-purple);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;letter-spacing:2px;transition:all 0.3s}
+.suspense-btn:hover{background:rgba(168,85,247,0.1);box-shadow:0 0 20px rgba(168,85,247,0.2)}
+
+/* ===== 提示框 ===== */
+.hint-box{margin:12px 16px;padding:12px 16px;background:rgba(245,158,11,0.08);border-left:3px solid var(--c-amber);border-radius:4px;font-size:12px;color:var(--c-text2);line-height:1.7}
+
+/* ===== Toast ===== */
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.88);color:#fff;padding:16px 28px;border-radius:12px;font-size:14px;z-index:9999;opacity:0;pointer-events:none;transition:opacity 0.4s;max-width:300px;text-align:center;line-height:1.7;white-space:pre-line}
+.toast.show{opacity:1}
+
+/* ===== 科普弹窗 ===== */
+.edu-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:499;opacity:0;pointer-events:none;transition:opacity 0.3s}
+.edu-overlay.show{opacity:1;pointer-events:auto}
+.edu-popup{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:var(--phone-w);max-width:380px;background:var(--c-surface);border-top:2px solid var(--c-blue);padding:24px 20px;border-radius:20px 20px 0 0;z-index:500;transition:transform 0.5s cubic-bezier(0.22,1,0.36,1)}
+.edu-popup.show{transform:translateX(-50%) translateY(0)}
+.edu-tag{display:inline-block;padding:3px 10px;background:rgba(59,130,246,0.15);color:var(--c-blue);font-size:11px;border-radius:4px;margin-bottom:10px;letter-spacing:1px}
+.edu-title{font-size:16px;font-weight:600;margin-bottom:10px}
+.edu-text{font-size:13px;color:var(--c-text2);line-height:2}
+.edu-close{display:block;margin:20px auto 0;padding:10px 40px;background:var(--c-blue);border:none;color:#fff;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit;letter-spacing:2px;transition:all 0.3s}
+.edu-close:hover{opacity:0.85}
+
+/* ===== 下一章按钮 ===== */
+.next-chapter{display:block;margin:24px 20px;padding:14px;background:linear-gradient(135deg,var(--c-blue),var(--c-purple));color:#fff;text-align:center;text-decoration:none;border-radius:12px;font-size:15px;letter-spacing:3px;cursor:pointer;border:none;font-family:inherit;transition:all 0.3s;opacity:0;transform:translateY(10px)}
+.next-chapter.show{opacity:1;transform:translateY(0);animation:fadeUp 0.6s ease forwards}
+.next-chapter:hover{box-shadow:0 4px 20px rgba(59,130,246,0.3)}
+
+/* ===== 情感粒子 ===== */
+.tear-drop{position:absolute;inset:0;pointer-events:none;z-index:100;border-radius:34px;overflow:hidden}
+.tear-particle{position:absolute;width:3px;height:3px;background:rgba(59,130,246,0.4);border-radius:50%;animation:tearFall 3s linear forwards}
+@keyframes tearFall{0%{opacity:0.6;transform:translateY(0)}100%{opacity:0;transform:translateY(700px)}}
+
+/* 柔和光晕 */
+.soft-glow{position:absolute;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(245,158,11,0.04) 0%,transparent 70%);animation:softPulse 6s ease-in-out infinite;pointer-events:none}
+@keyframes softPulse{0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:0.8;transform:scale(1.2)}}
+
+/* 任务完成标记 */
+.task-badge{display:inline-block;padding:2px 8px;background:rgba(34,197,94,0.15);color:var(--c-green);font-size:11px;border-radius:4px;margin-left:6px;letter-spacing:1px}
+.task-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c-surface2);margin-right:6px;transition:background 0.3s}
+.task-dot.done{background:var(--c-green)}
+</style>
+</head>
+<body>
+
+<!-- ===== 手机框架 ===== -->
+<div id="phone-frame">
+<div id="phone-screen">
+
+<!-- 状态栏 -->
+<div class="status-bar">
+<span id="status-time">09:41</span>
+<div class="status-icons">
+<div class="signal-bars"><span></span><span></span><span></span><span></span></div>
+<div class="wifi-icon"></div>
+<div class="battery"><div class="battery-fill"></div></div>
+</div>
+</div>
+
+<!-- ===== 章节开场叙述 ===== -->
+<div class="screen" id="intro-screen">
+<div class="intro-glow"></div>
+<div class="intro-text">
+你从噩梦中惊醒。<br>
+手心全是汗。<br><br>
+旧手机的屏幕还亮着——<br>
+备忘录里的密码已经解开。<br>
+你看到了那个词：<span class="keyword">"转走"</span>。<br><br>
+你<span class="fear">害怕极了</span>。<br>
+但你强迫自己<span class="calm">冷静下来</span>。<br><br>
+这部旧手机还有一些功能可以用。<br>
+你打开了通讯录……
+</div>
+<button class="intro-btn" onclick="enterHome()">打 开 通 讯 录</button>
+<div class="intro-hint">—— 第四章 · 空白来电 ——</div>
+</div>
+
+<!-- ===== iOS 桌面 ===== -->
+<div class="screen" id="home-screen">
+<div class="home-header">
+<div class="home-date" id="home-date-text">4月8日 星期一</div>
+<div class="home-title">旧手机 · 部分功能可用</div>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="home-progress" style="width:0%"></div></div>
+
+<div class="app-grid" id="app-grid">
+<!-- Row 1 -->
+<div class="app-cell" onclick="openApp('contacts')">
+<div style="position:relative"><div class="ios-icon ic-contacts"></div><span class="app-cell-badge" id="badge-contacts">4</span></div>
+<div class="app-cell-label">通讯录</div>
+</div>
+<div class="app-cell" onclick="openApp('messages')">
+<div style="position:relative"><div class="ios-icon ic-messages"></div><span class="app-cell-badge" id="badge-messages">9</span></div>
+<div class="app-cell-label">短信</div>
+</div>
+<div class="app-cell" onclick="openApp('relation')">
+<div style="position:relative"><div class="ios-icon ic-photos"></div></div>
+<div class="app-cell-label">相册</div>
+</div>
+<div class="app-cell disabled" onclick="showUnavailable('日历')">
+<div class="ios-icon ic-calendar"></div>
+<div class="app-cell-label">日历</div>
+</div>
+<!-- Row 2 -->
+<div class="app-cell" onclick="openApp('weather')">
+<div class="ios-icon ic-weather"></div>
+<div class="app-cell-label">天气</div>
+</div>
+<div class="app-cell disabled" onclick="showUnavailable('时钟')">
+<div class="ios-icon ic-clock"></div>
+<div class="app-cell-label">时钟</div>
+</div>
+<div class="app-cell" onclick="openApp('notes')">
+<div class="ios-icon ic-notes"></div>
+<div class="app-cell-label">备忘录</div>
+</div>
+<div class="app-cell disabled" onclick="showUnavailable('邮件')">
+<div class="ios-icon ic-mail"></div>
+<div class="app-cell-label">邮件</div>
+</div>
+<!-- Row 3 -->
+<div class="app-cell" onclick="openApp('calculator')">
+<div class="ios-icon ic-calc"></div>
+<div class="app-cell-label">计算器</div>
+</div>
+<div class="app-cell disabled" onclick="showUnavailable('相机')">
+<div class="ios-icon ic-camera"></div>
+<div class="app-cell-label">相机</div>
+</div>
+<div class="app-cell" onclick="openApp('music')">
+<div class="ios-icon ic-music"></div>
+<div class="app-cell-label">音乐</div>
+</div>
+<div class="app-cell disabled" onclick="showUnavailable('地图')">
+<div class="ios-icon ic-maps"></div>
+<div class="app-cell-label">地图</div>
+</div>
+<!-- Row 4 -->
+<div class="app-cell disabled" onclick="showUnavailable('设置')">
+<div class="ios-icon ic-settings"></div>
+<div class="app-cell-label">设置</div>
+</div>
+<div class="app-cell disabled" onclick="showUnavailable('浏览器')">
+<div class="ios-icon ic-browser"></div>
+<div class="app-cell-label">浏览器</div>
+</div>
+<div class="app-cell disabled" onclick="showUnavailable('App Store')">
+<div class="ios-icon ic-store"></div>
+<div class="app-cell-label">App Store</div>
+</div>
+<div class="app-cell disabled" onclick="showUnavailable('健康')">
+<div class="ios-icon ic-health"></div>
+<div class="app-cell-label">健康</div>
+</div>
+<!-- Row 5 -->
+<div class="app-cell disabled" onclick="showUnavailable('钱包')">
+<div class="ios-icon ic-wallet"></div>
+<div class="app-cell-label">钱包</div>
+</div>
+<div class="app-cell disabled" onclick="showUnavailable('文件')">
+<div class="ios-icon ic-files"></div>
+<div class="app-cell-label">文件</div>
+</div>
+<div class="app-cell disabled" onclick="showUnavailable('图书')">
+<div class="ios-icon ic-books"></div>
+<div class="app-cell-label">图书</div>
+</div>
+<div class="app-cell disabled" onclick="showUnavailable('播客')">
+<div class="ios-icon ic-podcast"></div>
+<div class="app-cell-label">播客</div>
+</div>
+<!-- Row 6 -->
+<div class="app-cell disabled" onclick="showUnavailable('指南针')">
+<div class="ios-icon ic-compass"></div>
+<div class="app-cell-label">指南针</div>
+</div>
+<div class="app-cell disabled" onclick="showUnavailable('语音备忘录')">
+<div class="ios-icon ic-voice"></div>
+<div class="app-cell-label">语音备忘录</div>
+</div>
+<div class="app-cell disabled" onclick="showUnavailable('微信')">
+<div class="ios-icon ic-wechat"></div>
+<div class="app-cell-label">微信</div>
+</div>
+<div class="app-cell disabled" onclick="showUnavailable('家庭')">
+<div class="ios-icon ic-homekit"></div>
+<div class="app-cell-label">家庭</div>
+</div>
+</div>
+
+<div class="hint-box" id="home-hint">
+<span class="task-dot" id="task-dot-1"></span>
+<span class="task-dot" id="task-dot-2" style="margin-left:12px"></span>
+<span class="task-dot" id="task-dot-3" style="margin-left:12px"></span>
+</div>
+</div>
+
+<!-- ===== 通讯录（黑名单） ===== -->
+<div class="screen" id="contacts-screen">
+<div class="screen-header">
+<button class="screen-back" onclick="backToHome()">&lsaquo;</button>
+<div class="screen-title">通讯录</div>
+</div>
+<div class="contact-tabs">
+<div class="contact-tab active" onclick="switchContactTab(this,'all')">全部</div>
+<div class="contact-tab" onclick="switchContactTab(this,'blacklist')">黑名单 <span class="tab-badge">4</span></div>
+</div>
+<div class="screen-body" id="contacts-body">
+
+<!-- 妈妈 -->
+<div class="blacklist-item" id="bl-mom" onclick="toggleBlacklist('bl-mom')">
+<div class="bl-header">
+<div class="bl-avatar" style="background:rgba(245,158,11,0.15);color:var(--c-amber)">
+<span style="font-size:18px">妈</span>
+<span class="ban-line"></span>
+</div>
+<div class="bl-info">
+<div class="bl-name">妈妈</div>
+<div class="bl-time">拉黑于 去年7月10日</div>
+</div>
+<div class="bl-arrow">rsaquo;</div>
+</div>
+<div class="bl-detail">
+<div class="bl-detail-inner">
+<div class="bl-remark-label">拉黑备注：</div>
+<div class="bl-remark">"又来烦我，说了不想回家"</div>
+<div class="bl-action" onclick="event.stopPropagation();showMoodDiary('mom')">
+查看拉黑时的心情记录
+</div>
+</div>
+</div>
+</div>
+
+<!-- 爸爸 -->
+<div class="blacklist-item" id="bl-dad" onclick="toggleBlacklist('bl-dad')">
+<div class="bl-header">
+<div class="bl-avatar" style="background:rgba(59,130,246,0.15);color:var(--c-blue)">
+<span style="font-size:18px">爸</span>
+<span class="ban-line"></span>
+</div>
+<div class="bl-info">
+<div class="bl-name">爸爸</div>
+<div class="bl-time">拉黑于 去年7月12日</div>
+</div>
+<div class="bl-arrow">&rsaquo;</div>
+</div>
+<div class="bl-detail">
+<div class="bl-detail-inner">
+<div class="bl-remark-label">拉黑备注：</div>
+<div class="bl-remark">"天天打电话催我回家，烦死了"</div>
+<div class="bl-action" onclick="event.stopPropagation();showMoodDiary('dad')">
+查看拉黑时的心情记录
+</div>
+</div>
+</div>
+</div>
+
+<!-- 表姐 -->
+<div class="blacklist-item" id="bl-cousin" onclick="toggleBlacklist('bl-cousin')">
+<div class="bl-header">
+<div class="bl-avatar" style="background:rgba(239,68,68,0.15);color:var(--c-red)">
+<span style="font-size:18px">姐</span>
+<span class="ban-line"></span>
+</div>
+<div class="bl-info">
+<div class="bl-name">表姐</div>
+<div class="bl-time">拉黑于 今年1月15日</div>
+</div>
+<div class="bl-arrow">&rsaquo;</div>
+</div>
+<div class="bl-detail">
+<div class="bl-detail-inner">
+<div class="bl-remark-label">拉黑备注：</div>
+<div class="bl-remark cult">"她开始怀疑了，先拉黑"</div>
+</div>
+</div>
+</div>
+
+<!-- 空白联系人 -->
+<div class="blacklist-item" id="bl-blank" onclick="toggleBlacklist('bl-blank')">
+<div class="bl-header">
+<div class="bl-avatar" style="background:rgba(168,85,247,0.15);color:var(--c-purple)">
+<span style="font-size:18px">?</span>
+<span class="ban-line" style="background:var(--c-purple);opacity:0.6"></span>
+</div>
+<div class="bl-info">
+<div class="bl-name" style="color:var(--c-purple)">空白联系人</div>
+<div class="bl-time">无姓名 · 无号码 · 信息已损坏</div>
+</div>
+<div class="bl-arrow">&rsaquo;</div>
+</div>
+<div class="bl-detail">
+<div class="bl-detail-inner">
+<div class="bl-remark-label">拉黑备注：</div>
+<div class="bl-remark" style="border-left-color:var(--c-purple)">无</div>
+<div class="bl-damaged">
+该联系人信息已损坏，无法查看完整通话记录。号码字段为空，姓名字段为空，通话历史字段为空。
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- ===== 短信（回收站） ===== -->
+<div class="screen" id="messages-screen">
+<div class="screen-header">
+<button class="screen-back" onclick="backToHome()">&lsaquo;</button>
+<div class="screen-title">短信 · 回收站</div>
+</div>
+<div class="screen-body">
+<div class="recycle-header">
+<div class="recycle-title">已删除的短信</div>
+<div class="recycle-count" id="sms-count">0 / 9 条</div>
+</div>
+<div id="sms-list"></div>
+<div class="restore-progress" id="restore-progress"></div>
+<button class="restore-btn" id="restore-btn" onclick="restoreNextSMS()">恢复下一条短信</button>
+
+<div class="sms-summary" id="sms-summary">
+<div class="summary-icon"></div>
+<div class="summary-title">这些消息，她一条也没有看到回复</div>
+<div class="summary-text">
+从去年7月到今年4月，整整9个月。<br>
+家人的每一句话都在说同一件事：<br>
+<span style="color:var(--c-amber)">"回家。"</span><br><br>
+而她把它们一条一条删除了。<br>
+不是因为不爱，而是因为被洗脑了。<br><br>
+<span style="color:var(--c-text3);font-size:12px">现在你读到了。虽然……太晚了。</span>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ===== 相册（人物关系图） ===== -->
+<div class="screen" id="relation-screen">
+<div class="screen-header">
+<button class="screen-back" onclick="backToHome()">&lsaquo;</button>
+<div class="screen-title">相册 · 加密文件夹</div>
+</div>
+<div class="screen-body">
+<div class="relation-diagram">
+<div class="soft-glow" style="top:30%;left:30%;transform:translate(-50%,-50%)"></div>
+<!-- SVG 连线 -->
+<svg width="100%" height="380" style="position:absolute;top:0;left:0;z-index:1">
+<line x1="155" y1="60" x2="55" y2="180" stroke="rgba(245,158,11,0.3)" stroke-width="1.5" stroke-dasharray="4,4">
+<animate attributeName="stroke-dashoffset" values="8;0" dur="1s" repeatCount="indefinite"/>
+</line>
+<line x1="155" y1="60" x2="155" y2="180" stroke="rgba(59,130,246,0.3)" stroke-width="1.5" stroke-dasharray="4,4">
+<animate attributeName="stroke-dashoffset" values="8;0" dur="1s" repeatCount="indefinite"/>
+</line>
+<line x1="155" y1="60" x2="265" y2="180" stroke="rgba(239,68,68,0.4)" stroke-width="2">
+<animate attributeName="stroke-dashoffset" values="8;0" dur="1s" repeatCount="indefinite"/>
+</line>
+<line x1="155" y1="60" x2="155" y2="300" stroke="rgba(168,85,247,0.3)" stroke-width="1.5" stroke-dasharray="2,6">
+<animate attributeName="stroke-dashoffset" values="8;0" dur="2s" repeatCount="indefinite"/>
+</line>
+<line x1="265" y1="210" x2="305" y2="300" stroke="rgba(239,68,68,0.3)" stroke-width="1.5" stroke-dasharray="4,4">
+<animate attributeName="stroke-dashoffset" values="8;0" dur="1s" repeatCount="indefinite"/>
+</line>
+</svg>
+<!-- 主角 -->
+<div class="relation-card protagonist" style="top:15px;left:105px;width:100px" onclick="showRelationInfo('protagonist')">
+<div class="card-emoji"></div>
+<div class="card-name">你</div>
+<div class="card-role">主角</div>
+</div>
+<!-- 妈妈 -->
+<div class="relation-card family" style="top:155px;left:5px;width:90px" onclick="showRelationInfo('mom')">
+<div class="card-emoji"></div>
+<div class="card-name">妈妈</div>
+<div class="card-role">被拉黑</div>
+</div>
+<!-- 爸爸 -->
+<div class="relation-card family" style="top:155px;left:110px;width:90px" onclick="showRelationInfo('dad')">
+<div class="card-emoji"></div>
+<div class="card-name">爸爸</div>
+<div class="card-role">被拉黑</div>
+</div>
+<!-- 表姐 -->
+<div class="relation-card villain" style="top:155px;left:215px;width:90px" onclick="showRelationInfo('cousin')">
+<div class="card-emoji"></div>
+<div class="card-name">表姐</div>
+<div class="card-role">传销成员</div>
+</div>
+<!-- 空白联系人 -->
+<div class="relation-card mystery" style="top:275px;left:105px;width:100px" onclick="showRelationInfo('blank')">
+<div class="card-emoji" style="animation:mysteryShimmer 2s ease-in-out infinite">?</div>
+<div class="card-name">空白联系人</div>
+<div class="card-role">身份不明</div>
+</div>
+<!-- 传销组织 -->
+<div class="relation-card villain" style="top:275px;left:250px;width:90px">
+<div class="card-emoji"></div>
+<div class="card-name">传销组织</div>
+<div class="card-role">幕后操控</div>
+</div>
+</div>
+<div class="relation-legend">
+<div class="legend-item"><div class="legend-dot" style="background:var(--c-blue)"></div>主角</div>
+<div class="legend-item"><div class="legend-dot" style="background:var(--c-amber)"></div>家人（被拉黑）</div>
+<div class="legend-item"><div class="legend-dot" style="background:var(--c-red)"></div>传销相关</div>
+<div class="legend-item"><div class="legend-dot" style="background:var(--c-purple)"></div>身份不明</div>
+</div>
+</div>
+</div>
+
+<!-- ===== 备忘录（愿望清单） ===== -->
+<div class="screen" id="notes-screen">
+<div class="screen-header">
+<button class="screen-back" onclick="backToHome()">&lsaquo;</button>
+<div class="screen-title">备忘录</div>
+</div>
+<div class="screen-body">
+<div class="wish-intro">
+你在被困期间偷偷写的愿望清单。有些已经永远无法实现了。
+</div>
+<div class="wish-list" id="wish-list"></div>
+</div>
+</div>
+
+<!-- ===== 天气 ===== -->
+<div class="screen" id="weather-screen">
+<div class="screen-header">
+<button class="screen-back" onclick="backToHome()">&lsaquo;</button>
+<div class="screen-title">天气</div>
+</div>
+<div class="weather-screen">
+<div class="weather-bg">
+<div class="weather-city">某地</div>
+<div class="weather-temp">14&deg;</div>
+<div class="weather-cond">阴天</div>
+<div class="weather-range">最高 16&deg; · 最低 9&deg;</div>
+<div class="weather-sun"></div>
+<div class="weather-cloud"></div>
+</div>
+<div class="weather-notice">
+适合待在室内。<br>
+<span style="font-size:11px;color:var(--c-text3)">——4月8日，被困第265天。</span>
+</div>
+<div class="weather-hourly">
+<div class="weather-hour"><div>现在</div><div class="h-icon"></div><div class="h-temp">14&deg;</div></div>
+<div class="weather-hour"><div>14时</div><div class="h-icon"></div><div class="h-temp">15&deg;</div></div>
+<div class="weather-hour"><div>17时</div><div class="h-icon"></div><div class="h-temp">13&deg;</div></div>
+<div class="weather-hour"><div>20时</div><div class="h-icon"></div><div class="h-temp">10&deg;</div></div>
+<div class="weather-hour"><div>23时</div><div class="h-icon"></div><div class="h-temp">9&deg;</div></div>
+</div>
+</div>
+</div>
+
+<!-- ===== 音乐 ===== -->
+<div class="screen" id="music-screen">
+<div class="screen-header">
+<button class="screen-back" onclick="backToHome()">&lsaquo;</button>
+<div class="screen-title">音乐</div>
+</div>
+<div class="screen-body">
+<div class="music-now-playing">
+<div class="music-art">
+<div class="note-shape"></div>
+<div class="note-stem"></div>
+</div>
+<div class="music-title" id="now-playing-title">父亲写的散文诗</div>
+<div class="music-artist" id="now-playing-artist">许飞</div>
+<div class="music-progress"><div class="music-progress-fill" id="music-progress-fill"></div></div>
+<div class="music-times"><span id="music-current">01:12</span><span id="music-total">04:28</span></div>
+<div class="music-controls">
+<button class="music-ctrl-btn" onclick="prevTrack()">&laquo;</button>
+<button class="music-ctrl-btn play" id="play-btn" onclick="togglePlay()">&#9654;</button>
+<button class="music-ctrl-btn" onclick="nextTrack()">&raquo;</button>
+</div>
+</div>
+<div class="music-playlist-label">播放列表</div>
+<div id="music-playlist"></div>
+</div>
+</div>
+
+<!-- ===== 计算器 ===== -->
+<div class="screen" id="calculator-screen">
+<div class="screen-header">
+<button class="screen-back" onclick="backToHome()">&lsaquo;</button>
+<div class="screen-title">计算器</div>
+</div>
+<div class="calc-display" id="calc-display">0</div>
+<div class="calc-buttons">
+<button class="calc-btn fn" onclick="calcClear()">AC</button>
+<button class="calc-btn fn" onclick="calcSign()">&plusmn;</button>
+<button class="calc-btn fn" onclick="calcPercent()">%</button>
+<button class="calc-btn op" onclick="calcOp('/')">&divide;</button>
+<button class="calc-btn" onclick="calcInput('7')">7</button>
+<button class="calc-btn" onclick="calcInput('8')">8</button>
+<button class="calc-btn" onclick="calcInput('9')">9</button>
+<button class="calc-btn op" onclick="calcOp('*')">&times;</button>
+<button class="calc-btn" onclick="calcInput('4')">4</button>
+<button class="calc-btn" onclick="calcInput('5')">5</button>
+<button class="calc-btn" onclick="calcInput('6')">6</button>
+<button class="calc-btn op" onclick="calcOp('-')">&minus;</button>
+<button class="calc-btn" onclick="calcInput('1')">1</button>
+<button class="calc-btn" onclick="calcInput('2')">2</button>
+<button class="calc-btn" onclick="calcInput('3')">3</button>
+<button class="calc-btn op" onclick="calcOp('+')">&plus;</button>
+<button class="calc-btn zero" onclick="calcInput('0')">0</button>
+<button class="calc-btn" onclick="calcInput('.')">.</button>
+<button class="calc-btn op" onclick="calcEquals()">&#61;</button>
+</div>
+</div>
+
+<!-- ===== 心情日记弹窗 ===== -->
+<div class="mood-overlay" id="mood-overlay" onclick="closeMoodDiary(event)">
+<div class="mood-sheet" id="mood-sheet" onclick="event.stopPropagation()">
+<div class="mood-date" id="mood-date"></div>
+<div class="mood-title" id="mood-title"></div>
+<div class="mood-section">
+<div class="mood-section-label">当时的心情</div>
+<div class="mood-original" id="mood-original"></div>
+</div>
+<div class="mood-section">
+<div class="mood-section-label">如今的反思</div>
+<div class="mood-reflection" id="mood-reflection"></div>
+</div>
+<button class="mood-close" onclick="closeMoodDiary()">关 闭</button>
+</div>
+</div>
+
+<!-- ===== 关系详情弹窗 ===== -->
+<div class="relation-detail-overlay" id="relation-detail-overlay" onclick="closeRelationDetail(event)">
+<div class="relation-detail-card" onclick="event.stopPropagation()">
+<div class="relation-detail-title" id="relation-detail-title"></div>
+<div class="relation-detail-text" id="relation-detail-text"></div>
+<button class="relation-detail-close" onclick="closeRelationDetail()">关 闭</button>
+</div>
+</div>
+
+<!-- ===== 空白联系人悬念 ===== -->
+<div class="suspense-overlay" id="suspense-overlay">
+<div class="suspense-icon"></div>
+<div class="suspense-title">空白联系人</div>
+<div class="suspense-text">
+这个号码似乎很重要，<br>
+但信息已损坏。<br><br>
+<span class="shimmer">也许在最后的时刻，<br>真相会浮出水面……</span>
+</div>
+<button class="suspense-btn" onclick="closeSuspense()">继 续</button>
+</div>
+
+</div><!-- phone-screen -->
+</div><!-- phone-frame -->
+
+<!-- 章节过渡 -->
+<div id="chapter-transition">
+<div class="chapter-num" id="ch-num"></div>
+<div class="chapter-name" id="ch-name"></div>
+<div class="chapter-sub" id="ch-sub"></div>
+<div class="chapter-bar"><div class="chapter-bar-fill" id="ch-bar"></div></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- 科普弹窗 -->
+<div class="edu-overlay" id="edu-overlay" onclick="closeEdu()"></div>
+<div class="edu-popup" id="edu-popup">
+<span class="edu-tag">防骗科普</span>
+<div class="edu-title" id="edu-title"></div>
+<div class="edu-text" id="edu-text"></div>
+<button class="edu-close" onclick="closeEdu()">我 了 解 了</button>
+</div>
+
+<!-- 下一章按钮容器 -->
+<div id="next-chapter-container" style="display:none">
+<button class="next-chapter" id="next-chapter-btn" onclick="goToChapter5()">进入终章 &rsaquo;</button>
+</div>
+
+<!-- 情感粒子 -->
+<div class="tear-drop" id="tear-drop"></div>
+
+<script>
+// ============ 全局状态 ============
+var state = {
+  progress: 0,
+  blacklistOpened: { mom:false, dad:false, cousin:false, blank:false },
+  allBlacklistOpened: false,
+  smsRestored: 0,
+  allSmsRestored: false,
+  relationViewed: false,
+  allTasksComplete: false,
+  currentTrack: 0,
+  isPlaying: false,
+  musicTimer: null,
+  calcDisplay: '0',
+  calcPrev: null,
+  calcOp: null,
+  calcReset: false
+};
+
+// ============ 数据 ============
+var smsData = [
+  { date:'7月10日', sender:'妈妈', content:'孩子，你在哪里？打电话不接，妈妈很担心。', tearful:false },
+  { date:'7月20日', sender:'妈妈', content:'听说你去上班了？在哪里？妈妈想去看你。', tearful:false },
+  { date:'8月1日', sender:'爸爸', content:'回来吧，家里不缺你那份工资。爸给你找了个工作。', tearful:true },
+  { date:'8月15日', sender:'妈妈', content:'你失联一个月了，妈报警了，警察说你在外地上班查不到。', tearful:true },
+  { date:'9月10日', sender:'妈妈', content:'今天是中秋节，你一个人在外面还好吗？妈给你包了你爱吃的饺子。', tearful:true },
+  { date:'10月5日', sender:'爸爸', content:'我和你妈去你说的那个地址找过，根本没有那个公司。你在哪里？', tearful:true },
+  { date:'12月25日', sender:'妈妈', content:'圣诞节快乐。妈每天都在等你电话。', tearful:true },
+  { date:'2月8日', sender:'妈妈', content:'快过年了，今年你能回家吗？妈老了，就想过个团圆年。', tearful:true },
+  { date:'4月3日', sender:'爸爸', content:'孩子，如果你还活着，给爸发个消息。一个字就行。', tearful:true }
+];
+
+var moodDiaries = {
+  mom: {
+    date: '去年7月10日',
+    title: '拉黑妈妈那天',
+    original: '又来烦我，说了不想回家。我都多大了，还管这管那的。她根本不理解我，只知道让我回家回家回家。我在这里有很好的工作，有很好的同事，为什么就不能相信我一次？烦死了，拉黑算了。',
+    reflection: '——你后来才明白。她不是在烦你，她是在害怕。害怕失去你。而你，把她的害怕当成了烦扰，亲手按下了那个红色的"拉黑"按钮。那一下，关掉的不是她的来电，是她最后一条求你回家的路。'
+  },
+  dad: {
+    date: '去年7月12日',
+    title: '拉黑爸爸那天',
+    original: '爸也来电话了，说什么回家给我找工作。我在这里有很好的工作啊！他们就是看不起我，觉得我干不成事，觉得我离开家就活不下去。我偏要混出个样子给他们看看。等我有出息了，他们就知道错了。',
+    reflection: '——他从来没有看不起你。他只是担心你，不知道你在哪里，不知道你过得好不好，不知道那个"公司"到底是不是真的。一个父亲最无力的时刻，是明知道孩子有危险，却连一个电话都打不进去。'
+  }
+};
+
+var relationInfo = {
+  protagonist: {
+    title: '你（主角）',
+    text: '一个刚毕业的年轻人，满怀期待地跟着表姐去"上班"，却一步步陷入传销组织的控制。在组织的洗脑下，你和最爱你的人断了联系。你拉黑了父母，以为那叫"独立"。后来你才知道，那叫"自断生路"。'
+  },
+  mom: {
+    title: '妈妈',
+    text: '从你离开那天起，她就没有停止过寻找。报警、去你说的地址找、每天守着手机等你回复……9个月里，她发的每一条消息都在假装平静，但每一句都在崩溃的边缘。你拉黑她那天，她打了37次电话。你一次都没有接。'
+  },
+  dad: {
+    title: '爸爸',
+    text: '嘴上说着"家里不缺你那份工资"，却偷偷去你说的地址找你。发现根本没有那个公司后，这个沉默寡言的男人，用了最沉重的字——"如果你还活着"。他不是不会表达爱，他只是把所有的爱都藏在了沉默里。'
+  },
+  cousin: {
+    title: '表姐',
+    text: '传销组织的工具人。她可能最初也是受害者，后来变成了加害者。当你开始产生怀疑时，组织抢先一步用你的手机拉黑了她——这是切断你和外界联系的最后一步。你以为是你拉黑了她，其实是你被彻底孤立了。'
+  },
+  blank: {
+    title: '空白联系人',
+    text: '一个没有姓名、没有号码的神秘联系人。通话记录已损坏，无法恢复。你记不起这是谁，也想不起来什么时候加的。但你的直觉告诉你——这个人，对你来说很重要。到底是谁？只有在最后的时刻，答案才会浮出水面。'
+  }
+};
+
+var wishList = [
+  { text:'回家吃妈包的饺子', done:false },
+  { text:'跟爸说一声对不起', done:false },
+  { text:'再去一次小时候去的海边', done:false },
+  { text:'把手机里家人的照片都洗出来', done:false },
+  { text:'如果还能出去，再也不离开家了', done:false },
+  { text:'过22岁生日（已经错过了）', done:false },
+  { text:'告诉表姐，我不怪她，但她不该拉我进来', done:false },
+  { text:'……后面的字迹模糊了，看不清了', done:false, faded:true }
+];
+
+var musicPlaylist = [
+  { name:'父亲写的散文诗', artist:'许飞', dur:'04:28' },
+  { name:'时间都去哪儿了', artist:'王铮亮', dur:'03:42' },
+  { name:'父亲', artist:'筷子兄弟', dur:'04:15' },
+  { name:'听妈妈的话', artist:'周杰伦', dur:'04:25' },
+  { name:'父亲和我', artist:'腾格尔', dur:'04:32' }
+];
+
+// ============ 初始化 ============
+window.addEventListener('load', function() {
+  showChapterTransition('第 四 章', '空 白 来 电', '难度：中阶 · 舒缓反转', function() {
+    document.getElementById('intro-screen').classList.add('show');
+  });
+  updateTime();
+  setInterval(updateTime, 30000);
+  initSMSList();
+  initWishList();
+  initMusicPlaylist();
+});
+
+// ============ 时间更新 ============
+function updateTime() {
+  var now = new Date();
+  var h = String(now.getHours()).padStart(2, '0');
+  var m = String(now.getMinutes()).padStart(2, '0');
+  var el = document.getElementById('status-time');
+  if (el) el.textContent = h + ':' + m;
+}
+
+// ============ 章节过渡 ============
+function showChapterTransition(num, name, sub, callback) {
+  var t = document.getElementById('chapter-transition');
+  document.getElementById('ch-num').textContent = num;
+  document.getElementById('ch-name').textContent = name;
+  document.getElementById('ch-sub').textContent = sub;
+  t.classList.add('show');
+  document.getElementById('ch-bar').style.width = '0';
+  setTimeout(function() { document.getElementById('ch-bar').style.width = '100%'; }, 100);
+  setTimeout(function() {
+    t.classList.remove('show');
+    if (callback) callback();
+  }, 3200);
+}
+
+// ============ 进入桌面 ============
+function enterHome() {
+  hideAllScreens();
+  document.getElementById('home-screen').classList.add('show');
+  updateProgress(5);
+}
+
+// ============ hideAllScreens 安全写法 ============
+function hideAllScreens() {
+  ['intro-screen','home-screen','contacts-screen','messages-screen','relation-screen','notes-screen','weather-screen','music-screen','calculator-screen'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('show');
+  });
+}
+
+// ============ App 导航 ============
+function openApp(appId) {
+  hideAllScreens();
+  var target = document.getElementById(appId + '-screen');
+  if (target) {
+    target.classList.add('show');
+    // 标记已读
+    if (appId === 'contacts') {
+      var badge = document.getElementById('badge-contacts');
+      if (badge) badge.style.display = 'none';
+    }
+    if (appId === 'messages') {
+      var badge = document.getElementById('badge-messages');
+      if (badge) badge.style.display = 'none';
+    }
+    if (appId === 'relation' && !state.relationViewed) {
+      state.relationViewed = true;
+      updateProgress(state.progress + 10);
+      document.getElementById('task-dot-3').classList.add('done');
+      checkAllComplete();
+    }
+  }
+}
+
+function backToHome() {
+  hideAllScreens();
+  document.getElementById('home-screen').classList.add('show');
+}
+
+function showUnavailable(appName) {
+  showToast(appName + ' 不可用\n该应用已被管理员禁用或无网络连接');
+}
+
+// ============ 通讯录标签页 ============
+function switchContactTab(tabEl, tab) {
+  document.querySelectorAll('.contact-tab').forEach(function(t) { t.classList.remove('active'); });
+  tabEl.classList.add('active');
+}
+
+// ============ 黑名单展开 ============
+function toggleBlacklist(id) {
+  var item = document.getElementById(id);
+  if (!item) return;
+  item.classList.toggle('open');
+
+  var key = id.replace('bl-', '');
+  if (!state.blacklistOpened[key]) {
+    state.blacklistOpened[key] = true;
+    updateProgress(state.progress + 5);
+    if (key === 'blank') {
+      createTearParticles(6);
+    }
+    checkBlacklistComplete();
+  }
+}
+
+// ============ 心情日记 ============
+function showMoodDiary(person) {
+  var diary = moodDiaries[person];
+  if (!diary) return;
+  document.getElementById('mood-date').textContent = diary.date;
+  document.getElementById('mood-title').textContent = diary.title;
+  document.getElementById('mood-original').textContent = diary.original;
+  document.getElementById('mood-reflection').textContent = diary.reflection;
+  document.getElementById('mood-overlay').classList.add('show');
+  createTearParticles(8);
+}
+
+function closeMoodDiary(e) {
+  if (e && e.target !== document.getElementById('mood-overlay')) return;
+  document.getElementById('mood-overlay').classList.remove('show');
+}
+
+// ============ 黑名单完成检查 ============
+function checkBlacklistComplete() {
+  var allOpened = Object.values(state.blacklistOpened).every(function(v) { return v; });
+  if (allOpened && !state.allBlacklistOpened) {
+    state.allBlacklistOpened = true;
+    updateProgress(state.progress + 5);
+    document.getElementById('task-dot-1').classList.add('done');
+    setTimeout(function() {
+      showEdu('被忽视的求救信号', '很多传销受害者在最初并非完全失去联系，而是因为赌气、羞愧或被洗脑，主动切断了与家人的联系。家人发出的每一条消息、每一个电话，都是希望受害者回家的信号。如果你身边有人突然失联、行为异常、拒绝透露工作地点和联系方式，请及时关注并报警。有时候，"烦"的背后是爱，"唠叨"的背后是恐惧。');
+    }, 1500);
+    checkAllComplete();
+  }
+}
+
+// ============ 短信回收站 ============
+function initSMSList() {
+  var list = document.getElementById('sms-list');
+  if (!list) return;
+  list.innerHTML = '';
+  smsData.forEach(function(sms, i) {
+    var div = document.createElement('div');
+    div.className = 'sms-message';
+    div.id = 'sms-' + i;
+    div.innerHTML =
+      '<div class="sms-date">' + sms.date + '</div>' +
+      '<div class="sms-sender">' + sms.sender + '</div>' +
+      '<div class="sms-content' + (sms.tearful ? ' tearful' : '') + '">' + sms.content + '</div>';
+    list.appendChild(div);
+  });
+}
+
+function restoreNextSMS() {
+  if (state.smsRestored >= smsData.length) return;
+
+  var btn = document.getElementById('restore-btn');
+  btn.disabled = true;
+  btn.textContent = '正在恢复...';
+
+  var msg = document.getElementById('sms-' + state.smsRestored);
+  msg.classList.add('restoring');
+
+  state.smsRestored++;
+  document.getElementById('sms-count').textContent = state.smsRestored + ' / 9 条';
+  document.getElementById('restore-progress').textContent = '已恢复第 ' + state.smsRestored + ' 条';
+
+  updateProgress(5 + state.smsRestored * 3);
+
+  // 催泪短信添加粒子效果
+  if (smsData[state.smsRestored - 1].tearful) {
+    createTearParticles(3);
+  }
+
+  // 2秒停顿后允许恢复下一条
+  setTimeout(function() {
+    if (state.smsRestored < smsData.length) {
+      btn.disabled = false;
+      btn.textContent = '恢复下一条短信';
+      document.getElementById('restore-progress').textContent = '';
+    }
+  }, 2000);
+
+  // 全部恢复完成
+  if (state.smsRestored === smsData.length) {
+    btn.disabled = true;
+    btn.textContent = '所有消息已恢复';
+    document.getElementById('restore-progress').textContent = '恢复完成';
+    state.allSmsRestored = true;
+    document.getElementById('task-dot-2').classList.add('done');
+
+    setTimeout(function() {
+      document.getElementById('sms-summary').classList.add('show');
+      createTearParticles(15);
+    }, 800);
+
+    setTimeout(function() {
+      var summary = document.getElementById('sms-summary');
+      if (summary) summary.scrollIntoView({ behavior:'smooth', block:'center' });
+    }, 1200);
+
+    checkAllComplete();
+  }
+}
+
+// ============ 人物关系详情 ============
+function showRelationInfo(key) {
+  var info = relationInfo[key];
+  if (!info) return;
+  document.getElementById('relation-detail-title').textContent = info.title;
+  document.getElementById('relation-detail-text').textContent = info.text;
+  document.getElementById('relation-detail-overlay').classList.add('show');
+  if (key === 'mom' || key === 'dad') {
+    createTearParticles(5);
+  }
+}
+
+function closeRelationDetail(e) {
+  if (e && e.target !== document.getElementById('relation-detail-overlay')) return;
+  document.getElementById('relation-detail-overlay').classList.remove('show');
+}
+
+// ============ 备忘录（愿望清单） ============
+function initWishList() {
+  var list = document.getElementById('wish-list');
+  if (!list) return;
+  list.innerHTML = '';
+  wishList.forEach(function(item, i) {
+    var div = document.createElement('div');
+    div.className = 'wish-item' + (item.done ? ' done' : '') + (item.faded ? ' wish-faded' : '');
+    div.innerHTML =
+      '<div class="wish-checkbox"></div>' +
+      '<div class="wish-text">' + item.text + '</div>';
+    list.appendChild(div);
+  });
+}
+
+// ============ 音乐播放器 ============
+function initMusicPlaylist() {
+  var list = document.getElementById('music-playlist');
+  if (!list) return;
+  list.innerHTML = '';
+  musicPlaylist.forEach(function(track, i) {
+    var div = document.createElement('div');
+    div.className = 'music-track' + (i === 0 ? ' playing' : '');
+    div.id = 'track-' + i;
+    div.innerHTML =
+      '<div class="music-track-num">' + (i + 1) + '</div>' +
+      '<div class="music-track-info">' +
+        '<div class="music-track-name">' + track.name + '</div>' +
+        '<div class="music-track-artist">' + track.artist + '</div>' +
+      '</div>' +
+      '<div class="music-track-dur">' + track.dur + '</div>';
+    div.onclick = function() { playTrack(i); };
+    list.appendChild(div);
+  });
+}
+
+function playTrack(idx) {
+  state.currentTrack = idx;
+  state.isPlaying = false;
+  var track = musicPlaylist[idx];
+  document.getElementById('now-playing-title').textContent = track.name;
+  document.getElementById('now-playing-artist').textContent = track.artist;
+  document.getElementById('music-total').textContent = track.dur;
+  document.getElementById('music-current').textContent = '00:00';
+  document.getElementById('music-progress-fill').style.width = '0%';
+  document.querySelectorAll('.music-track').forEach(function(t) { t.classList.remove('playing'); });
+  var trackEl = document.getElementById('track-' + idx);
+  if (trackEl) trackEl.classList.add('playing');
+  togglePlay();
+}
+
+function togglePlay() {
+  state.isPlaying = !state.isPlaying;
+  var btn = document.getElementById('play-btn');
+  if (state.isPlaying) {
+    btn.innerHTML = '&#10074;&#10074;';
+    startMusicProgress();
+  } else {
+    btn.innerHTML = '&#9654;';
+    stopMusicProgress();
+  }
+}
+
+function startMusicProgress() {
+  stopMusicProgress();
+  var progress = 0;
+  state.musicTimer = setInterval(function() {
+    progress += 0.5;
+    if (progress > 100) {
+      progress = 0;
+      nextTrack();
+      return;
+    }
+    document.getElementById('music-progress-fill').style.width = progress + '%';
+    var totalSec = parseTime(musicPlaylist[state.currentTrack].dur);
+    var currSec = Math.floor(totalSec * progress / 100);
+    document.getElementById('music-current').textContent = formatTime(currSec);
+  }, 500);
+}
+
+function stopMusicProgress() {
+  if (state.musicTimer) {
+    clearInterval(state.musicTimer);
+    state.musicTimer = null;
+  }
+}
+
+function nextTrack() {
+  var next = (state.currentTrack + 1) % musicPlaylist.length;
+  playTrack(next);
+}
+
+function prevTrack() {
+  var prev = (state.currentTrack - 1 + musicPlaylist.length) % musicPlaylist.length;
+  playTrack(prev);
+}
+
+function parseTime(t) {
+  var parts = t.split(':');
+  return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+}
+
+function formatTime(sec) {
+  var m = Math.floor(sec / 60);
+  var s = sec % 60;
+  return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+}
+
+// ============ 计算器 ============
+function calcInput(val) {
+  if (state.calcReset) { state.calcDisplay = '0'; state.calcReset = false; }
+  if (val === '.' && state.calcDisplay.includes('.')) return;
+  if (state.calcDisplay === '0' && val !== '.') {
+    state.calcDisplay = val;
+  } else {
+    state.calcDisplay += val;
+  }
+  updateCalcDisplay();
+}
+
+function calcOp(op) {
+  if (state.calcOp && !state.calcReset) calcEquals();
+  state.calcPrev = parseFloat(state.calcDisplay);
+  state.calcOp = op;
+  state.calcReset = true;
+}
+
+function calcEquals() {
+  if (state.calcOp === null || state.calcPrev === null) return;
+  var curr = parseFloat(state.calcDisplay);
+  var result;
+  switch (state.calcOp) {
+    case '+': result = state.calcPrev + curr; break;
+    case '-': result = state.calcPrev - curr; break;
+    case '*': result = state.calcPrev * curr; break;
+    case '/': result = curr === 0 ? 0 : state.calcPrev / curr; break;
+  }
+  state.calcDisplay = String(Math.round(result * 1e10) / 1e10);
+  state.calcOp = null;
+  state.calcPrev = null;
+  state.calcReset = true;
+  updateCalcDisplay();
+}
+
+function calcClear() {
+  state.calcDisplay = '0';
+  state.calcPrev = null;
+  state.calcOp = null;
+  state.calcReset = false;
+  updateCalcDisplay();
+}
+
+function calcSign() {
+  state.calcDisplay = String(parseFloat(state.calcDisplay) * -1);
+  updateCalcDisplay();
+}
+
+function calcPercent() {
+  state.calcDisplay = String(parseFloat(state.calcDisplay) / 100);
+  updateCalcDisplay();
+}
+
+function updateCalcDisplay() {
+  var el = document.getElementById('calc-display');
+  if (el) el.textContent = state.calcDisplay;
+}
+
+// ============ 进度管理 ============
+function updateProgress(value) {
+  state.progress = Math.min(100, value);
+  var el = document.getElementById('home-progress');
+  if (el) el.style.width = state.progress + '%';
+}
+
+// ============ 全部完成检查 ============
+function checkAllComplete() {
+  if (state.allBlacklistOpened && state.allSmsRestored && state.relationViewed && !state.allTasksComplete) {
+    state.allTasksComplete = true;
+    updateProgress(95);
+
+    // 显示空白联系人悬念
+    setTimeout(function() {
+      document.getElementById('suspense-overlay').classList.add('show');
+      createTearParticles(10);
+    }, 1500);
+  }
+}
+
+// ============ 关闭悬念 ============
+function closeSuspense() {
+  document.getElementById('suspense-overlay').classList.remove('show');
+  setTimeout(function() {
+    showEdu('沉默的代价', '传销和拐卖离你并不遥远。每年有大量年轻人因求职、交友被骗入传销组织，部分人至今下落不明。如果你或身边人遇到以下情况请立即报警（110）：\n\n1. 被要求上交手机、身份证\n2. 被限制人身自由、无法自主离开\n3. 工作内容以"拉人头"为主\n4. 被要求切断与家人联系\n\n记住：真正的家人永远不会伤害你。如果你正在经历这些，请想办法拨打110或12110（短信报警）。');
+  }, 500);
+}
+
+// ============ Toast ============
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 3500);
+}
+
+// ============ 科普弹窗 ============
+function showEdu(title, text) {
+  document.getElementById('edu-title').textContent = title;
+  document.getElementById('edu-text').textContent = text;
+  document.getElementById('edu-popup').classList.add('show');
+  document.getElementById('edu-overlay').classList.add('show');
+}
+
+function closeEdu() {
+  document.getElementById('edu-popup').classList.remove('show');
+  document.getElementById('edu-overlay').classList.remove('show');
+  // 显示下一章按钮
+  if (state.allTasksComplete) {
+    setTimeout(function() {
+      updateProgress(100);
+      var container = document.getElementById('next-chapter-container');
+      var btn = document.getElementById('next-chapter-btn');
+      if (container) container.style.display = 'block';
+      if (btn) btn.classList.add('show');
+    }, 500);
+  }
+}
+
+// ============ 情感粒子 ============
+function createTearParticles(count) {
+  var container = document.getElementById('tear-drop');
+  if (!container) return;
+  for (var i = 0; i < count; i++) {
+    (function(idx) {
+      setTimeout(function() {
+        var p = document.createElement('div');
+        p.className = 'tear-particle';
+        p.style.left = (20 + Math.random() * 60) + '%';
+        p.style.top = (Math.random() * 30) + '%';
+        p.style.animationDuration = (2 + Math.random() * 3) + 's';
+        var size = (2 + Math.random() * 2) + 'px';
+        p.style.width = size;
+        p.style.height = size;
+        container.appendChild(p);
+        setTimeout(function() { p.remove(); }, 5000);
+      }, idx * 200);
+    })(i);
+  }
+}
+
+// ============ 下一章过渡 ============
+function goToChapter5() {
+  showChapterTransition('终 章', '未 接 归 途', '难度：终极高阶 · 多重结局', function() {
+    window.location.href = 'chapter5.html';
+  });
+}
+</script>
+</body>
+</html>
