@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>空白联系人 · 第二章</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--phone-w:380px;--phone-h:760px;
+--c-bg:#0f1115;--c-surface:#1a1d24;--c-surface2:#222630;
+--c-text:#e4e4e7;--c-text2:#9ca3af;--c-text3:#6b7280;
+--c-blue:#3b82f6;--c-green:#22c55e;--c-red:#ef4444;
+--c-amber:#f59e0b;--c-purple:#a855f7;
+}
+html,body{height:100%;background:var(--c-bg);font-family:-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;color:var(--c-text);overflow-y:auto}
+body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px 0}
+
+/* ===== 手机框架 ===== */
+#phone-frame{width:var(--phone-w);height:var(--phone-h);background:#000;border-radius:42px;padding:10px;box-shadow:0 0 60px rgba(0,0,0,0.5),0 0 0 2px #2a2a2a,0 0 120px rgba(239,68,68,0.06);position:relative;overflow:hidden}
+#phone-screen{width:100%;height:100%;background:var(--c-surface);border-radius:34px;overflow:hidden;position:relative}
+#screen-scroll{width:100%;height:100%;overflow-y:auto;overflow-x:hidden}
+#screen-scroll::-webkit-scrollbar{width:0}
+
+/* ===== 状态栏 ===== */
+.status-bar{height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:13px;font-weight:600;color:var(--c-text);background:var(--c-surface);position:sticky;top:0;z-index:50;flex-shrink:0}
+.status-icons{display:flex;gap:6px;align-items:center}
+.sig{display:flex;align-items:flex-end;gap:1.5px;height:11px}
+.sig i{width:3px;background:var(--c-text);border-radius:1px}
+.sig i:nth-child(1){height:4px}.sig i:nth-child(2){height:6px}.sig i:nth-child(3){height:8px}.sig i:nth-child(4){height:11px}
+.wifi{position:relative;width:15px;height:11px}
+.wifi::before,.wifi::after{content:"";position:absolute;left:50%;border:1.6px solid var(--c-text);border-radius:50%;border-bottom-color:transparent;border-left-color:transparent;border-right-color:transparent;transform:translateX(-50%)}
+.wifi::before{width:10px;height:10px;top:0}
+.wifi::after{width:5px;height:5px;top:4px}
+.batt{width:24px;height:12px;border:1px solid var(--c-text2);border-radius:3px;padding:1.5px;position:relative}
+.batt::after{content:"";position:absolute;right:-3px;top:3.5px;width:2px;height:5px;background:var(--c-text2);border-radius:0 1px 1px 0}
+.batt-fill{display:block;width:64%;height:100%;background:var(--c-amber);border-radius:1px}
+
+/* ===== 章节开头 ===== */
+#chapter-intro{position:absolute;inset:0;z-index:300;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#chapter-intro.hide{opacity:0;pointer-events:none;transition:opacity 1s}
+.ci-num{font-size:11px;color:var(--c-text3);letter-spacing:8px;margin-bottom:14px;opacity:0;animation:fadeUp 0.8s forwards 0.2s}
+.ci-title{font-size:28px;letter-spacing:6px;font-weight:300;margin-bottom:10px;opacity:0;animation:fadeUp 0.8s forwards 0.5s}
+.ci-sub{font-size:12px;color:var(--c-red);letter-spacing:4px;margin-bottom:30px;opacity:0;animation:fadeUp 0.8s forwards 0.8s}
+.ci-bar{width:180px;height:1px;background:var(--c-surface2);overflow:hidden;opacity:0;animation:fadeUp 0.8s forwards 1s}
+.ci-bar-fill{height:100%;width:0;background:var(--c-red);transition:width 2.5s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== 紧张氛围边框 ===== */
+.tension-border{position:absolute;inset:0;border-radius:34px;pointer-events:none;z-index:40;border:1px solid transparent;transition:border-color 1s}
+.tension-border.active{animation:tensionPulse 3s ease-in-out infinite}
+@keyframes tensionPulse{0%,100%{box-shadow:inset 0 0 30px rgba(239,68,68,0.04)}50%{box-shadow:inset 0 0 50px rgba(239,68,68,0.12)}}
+
+/* ===== 通用屏幕 ===== */
+.screen{display:none;flex-direction:column;min-height:calc(100% - 36px);position:relative}
+.screen.show{display:flex}
+.scr-header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--c-surface2);background:var(--c-surface);flex-shrink:0;position:sticky;top:36px;z-index:40}
+.scr-back{font-size:22px;color:var(--c-blue);cursor:pointer;background:none;border:none;font-family:inherit;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:8px;line-height:1}
+.scr-back:hover{background:rgba(59,130,246,0.1)}
+.scr-title{font-size:16px;font-weight:600;flex:1;text-align:center}
+.scr-title.center{margin-right:30px}
+.scr-body{flex:1;padding:16px;overflow-y:auto}
+.scr-body::-webkit-scrollbar{width:0}
+.scr-action{background:none;border:none;color:var(--c-blue);font-size:13px;cursor:pointer;font-family:inherit;padding:4px 6px}
+
+/* ===== 桌面 ===== */
+#home-screen{position:relative}
+.home-wallpaper{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.home-wallpaper::before{content:"";position:absolute;inset:0;background:
+  /* 模拟全家福照片 - 冷色调暗化版本 */
+  linear-gradient(180deg,
+    rgba(15,17,21,0.55) 0%,
+    rgba(18,22,30,0.50) 30%,
+    rgba(22,26,38,0.45) 100%),
+  /* 冷色偏移覆盖层 - 代表不安 */
+  linear-gradient(160deg,
+    rgba(20,30,55,0.6) 0%,
+    rgba(15,20,40,0.5) 40%,
+    rgba(25,20,35,0.55) 70%,
+    rgba(18,15,28,0.6) 100%),
+  /* 底层渐变 - 模拟褪色的温馨照片 */
+  linear-gradient(180deg,
+    #3a4a5f 0%,
+    #2e3d52 25%,
+    #344058 50%,
+    #2a3648 75%,
+    #1e2838 100%)}
+.home-wallpaper::after{content:"";position:absolute;inset:0;
+  /* 模拟照片中的人物轮廓 - 三个人影 */
+  background:
+    /* 左侧人影 */
+    radial-gradient(ellipse 28px 52px at 30% 58%, rgba(60,70,90,0.35) 0%, transparent 100%),
+    /* 中间人影（最高） */
+    radial-gradient(ellipse 32px 62px at 50% 52%, rgba(55,65,85,0.35) 0%, transparent 100%),
+    /* 右侧人影 */
+    radial-gradient(ellipse 28px 48px at 70% 60%, rgba(60,70,90,0.35) 0%, transparent 100%),
+    /* 暗角效果 - 增加压迫感 */
+    radial-gradient(ellipse 70% 60% at 50% 50%, transparent 0%, rgba(10,12,18,0.6) 100%),
+    /* 微妙的红色光晕 - 不祥预兆 */
+    radial-gradient(ellipse 50% 40% at 50% 30%, rgba(100,30,30,0.06) 0%, transparent 100%)}
+.home-top,.progress-bar,.desktop-grid,.dock,.home-hint,.clue-status{position:relative;z-index:1}
+.home-top{padding:18px 20px 6px}
+.home-greet{font-size:20px;font-weight:600}
+.home-date{font-size:12px;color:var(--c-text3);margin-top:4px}
+.blink{display:inline-block;width:6px;height:6px;background:var(--c-red);border-radius:50%;margin-left:5px;vertical-align:middle;animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.progress-bar{height:3px;background:var(--c-surface2);position:relative;overflow:hidden;flex-shrink:0}
+.progress-fill{height:100%;background:var(--c-red);transition:width 0.6s ease;width:0}
+.desktop-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px 6px;padding:14px 14px 6px}
+.app-tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;cursor:pointer;font-family:inherit;color:var(--c-text);padding:2px}
+.app-tile:active{transform:scale(0.92)}
+.app-label{font-size:11px;color:var(--c-text);max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-badge{position:absolute;top:-2px;right:6px;background:var(--c-red);color:#fff;font-size:10px;min-width:17px;height:17px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;font-weight:600;border:1.5px solid var(--c-surface)}
+.app-badge.done{background:var(--c-green)}
+.dock{display:flex;justify-content:space-around;padding:12px 8px 18px;margin:8px 12px 16px;background:rgba(255,255,255,0.06);border-radius:22px}
+.home-hint{margin:6px 16px 16px;padding:11px 14px;background:rgba(239,68,68,0.07);border-left:3px solid var(--c-red);border-radius:6px;font-size:12px;color:var(--c-text2);line-height:1.7}
+.home-hint b{color:var(--c-red)}
+
+/* ===== 碎片状态 ===== */
+.clue-status{padding:14px 18px;border-top:1px solid var(--c-surface2);background:var(--c-surface);flex-shrink:0}
+.clue-title{font-size:12px;color:var(--c-text3);margin-bottom:10px;letter-spacing:1px}
+.clue-title b{color:var(--c-red)}
+.clue-slots{display:flex;gap:8px}
+.clue-slot{flex:1;text-align:center}
+.clue-slot .bar{height:6px;background:var(--c-surface2);border-radius:3px;overflow:hidden;position:relative}
+.clue-slot .bar::after{content:"";position:absolute;inset:0;width:0;background:var(--c-red);border-radius:3px;transition:width 0.6s ease}
+.clue-slot.filled .bar::after{width:100%}
+.clue-slot .lab{font-size:10px;color:var(--c-text3);margin-top:5px}
+.clue-slot.filled .lab{color:var(--c-red)}
+
+/* ===== App 图标（纯CSS）===== */
+.icon{width:48px;height:48px;border-radius:13px;position:relative;overflow:hidden;flex-shrink:0}
+.icon::before,.icon::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.ic-wechat{background:linear-gradient(135deg,#07c160,#06ad56)}
+.ic-wechat::before{width:22px;height:17px;background:#fff;border-radius:11px 11px 11px 3px;transform:translate(-58%,-52%)}
+.ic-wechat::after{width:17px;height:13px;background:#fff;border-radius:9px 9px 9px 3px;transform:translate(48%,55%)}
+.ic-files{background:linear-gradient(135deg,#2196f3,#1976d2)}
+.ic-files::before{width:30px;height:22px;background:#fff;border-radius:3px;transform:translate(-50%,-38%)}
+.ic-files::after{width:30px;height:7px;background:#bbdefb;border-radius:3px 3px 0 0;transform:translate(-50%,-155%)}
+.ic-weather{background:linear-gradient(135deg,#5a7fa5,#3b5d80)}
+.ic-weather::before{width:13px;height:13px;border-radius:50%;background:#ffd54f;transform:translate(50%,-60%)}
+.ic-weather::after{width:27px;height:15px;background:#fff;border-radius:14px;transform:translate(-30%,48%);box-shadow:8px -7px 0 -3px #fff}
+.ic-calendar{background:#fff}
+.ic-calendar::before{width:100%;height:11px;background:#ff3b30;top:0;left:0;transform:none}
+.ic-calendar::after{content:"16";width:auto;height:auto;font-size:23px;font-weight:600;color:#1c1c1e;transform:translate(-50%,-38%)}
+.ic-photos{background:conic-gradient(from 45deg,#ff6b6b,#ffd93d,#6bcf7f,#4d96ff,#a855f7,#ff6b6b)}
+.ic-clock{background:linear-gradient(135deg,#2c2c2e,#000)}
+.ic-clock::before{width:27px;height:27px;border-radius:50%;border:2px solid #fff;box-sizing:border-box}
+.ic-clock::after{width:2px;height:9px;background:#fff;border-radius:1px;transform:translate(-50%,-80%);transform-origin:bottom center}
+.ic-notes{background:linear-gradient(180deg,#fff38a,#ffc02e)}
+.ic-notes::before{width:100%;height:100%;background:repeating-linear-gradient(180deg,transparent 0 8px,rgba(0,0,0,0.07) 8px 9px);top:0;left:0;transform:none}
+.ic-notes::after{width:100%;height:11px;background:#fff;top:0;left:0;transform:none}
+.ic-music{background:linear-gradient(135deg,#fb2d6f,#ff6482)}
+.ic-music::before{width:3px;height:24px;background:#fff;border-radius:2px;transform:translate(40%,-30%)}
+.ic-music::after{width:12px;height:9px;background:#fff;border-radius:50%;transform:translate(-10%,150%) rotate(-18deg)}
+.ic-calc{background:linear-gradient(135deg,#3a3a3c,#1c1c1e)}
+.ic-calc::before{width:8px;height:8px;border-radius:2px;background:#6a6a6e;box-shadow:11px 0 0 #6a6a6e,0 11px 0 #ff9500,11px 11px 0 #6a6a6e;transform:translate(-50%,-30%)}
+.ic-calc::after{width:22px;height:5px;border-radius:2px;background:#000;transform:translate(-50%,-150%)}
+.ic-appstore{background:linear-gradient(135deg,#1e90ff,#0a6ed1)}
+.ic-appstore::before{content:"A";width:auto;height:auto;font-size:32px;font-weight:700;color:#fff;font-family:Georgia,serif;transform:translate(-50%,-52%)}
+.ic-maps{background:linear-gradient(135deg,#7bd66a,#4caf50)}
+.ic-maps::before{width:100%;height:100%;background:repeating-linear-gradient(45deg,transparent 0 11px,rgba(255,255,255,0.22) 11px 12px);top:0;left:0;transform:none}
+.ic-maps::after{width:11px;height:11px;border-radius:50% 50% 50% 0;background:#ff3b30;transform:translate(-50%,-50%) rotate(-45deg);box-shadow:0 0 0 2px #fff}
+.ic-mail{background:linear-gradient(135deg,#1e90ff,#0a6ed1)}
+.ic-mail::before{width:28px;height:20px;background:#fff;border-radius:4px;transform:translate(-50%,-50%)}
+.ic-mail::after{width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:11px solid #1e90ff;transform:translate(-50%,-82%)}
+.ic-phone{background:linear-gradient(135deg,#34c759,#28a745)}
+.ic-phone::before{width:15px;height:15px;background:#fff;border-radius:3px 15px 3px 3px;transform:translate(-50%,-50%) rotate(135deg)}
+.ic-sms{background:linear-gradient(135deg,#34c759,#28a745)}
+.ic-sms::before{width:25px;height:18px;background:#fff;border-radius:9px;transform:translate(-50%,-58%)}
+.ic-sms::after{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid #fff;transform:translate(-20%,32%)}
+.ic-browser{background:linear-gradient(135deg,#1e90ff,#0a6ed1)}
+.ic-browser::before{width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-sizing:border-box}
+.ic-browser::after{width:24px;height:2px;background:#fff;box-shadow:0 -7px 0 0 #fff,0 7px 0 0 #fff;transform:translate(-50%,-50%) rotate(25deg)}
+.ic-settings{background:linear-gradient(135deg,#8e8e93,#48484a)}
+.ic-settings::before{width:22px;height:22px;border-radius:50%;border:4px solid #fff;box-sizing:border-box}
+.ic-settings::after{width:5px;height:5px;background:transparent;box-shadow:0 -13px 0 #fff,0 13px 0 #fff,-13px 0 0 #fff,13px 0 0 #fff,9px 9px 0 #fff,-9px 9px 0 #fff,9px -9px 0 #fff,-9px -9px 0 #fff}
+.ic-camera{background:linear-gradient(135deg,#3a3a3c,#1c1c1e)}
+.ic-camera::before{width:22px;height:16px;background:#555;border-radius:4px;transform:translate(-50%,-50%)}
+.ic-camera::after{width:10px;height:10px;background:#1c1c1e;border:2px solid #999;border-radius:50%;transform:translate(-50%,-50%)}
+
+/* ===== 微信聊天 ===== */
+.chat-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px}
+.chat-body::-webkit-scrollbar{width:0}
+.chat-time{text-align:center;font-size:11px;color:var(--c-text3);margin:6px 0;padding:3px 12px;background:rgba(255,255,255,0.04);border-radius:4px;align-self:center}
+.msg{max-width:76%;padding:9px 13px;border-radius:16px;font-size:14px;line-height:1.65;word-break:break-word}
+.msg.from{align-self:flex-start;background:var(--c-surface2);border-bottom-left-radius:5px}
+.msg.to{align-self:flex-end;background:var(--c-blue);color:#fff;border-bottom-right-radius:5px}
+.msg.new{align-self:flex-start;background:var(--c-surface2);border-bottom-left-radius:5px;box-shadow:0 0 0 1.5px rgba(239,68,68,0.4);position:relative}
+.msg.new::before{content:"新";position:absolute;top:-7px;left:-7px;width:16px;height:16px;background:var(--c-red);color:#fff;font-size:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700}
+.msg.deleted{align-self:flex-start;background:rgba(239,68,68,0.06);border:1px dashed rgba(239,68,68,0.22);color:var(--c-text3);font-size:12px;font-style:italic;padding:8px 12px;border-radius:8px;max-width:70%}
+.chat-hint{margin:8px 0;padding:11px 13px;background:rgba(245,158,11,0.07);border-left:3px solid var(--c-amber);border-radius:6px;font-size:12px;color:var(--c-text2);line-height:1.7}
+.chat-hint b{color:var(--c-amber)}
+
+/* 微信聊天信息页 */
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:13px 14px;background:var(--c-surface2);border-radius:10px;margin-bottom:7px;cursor:pointer;transition:background 0.2s}
+.info-row:hover{background:#2a2e3a}
+.info-row .ir-t{font-size:14px}
+.info-row .ir-r{font-size:12px;color:var(--c-text3)}
+.info-row .ir-r.red{color:var(--c-red)}
+.clue-found{padding:14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;font-size:13px;color:var(--c-text);line-height:1.8}
+.clue-found b{color:var(--c-red)}
+
+/* ===== 文件管理 / 回收站 ===== */
+.file-row{display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--c-surface2);border-radius:10px;margin-bottom:7px;cursor:pointer;transition:background 0.2s}
+.file-row:hover{background:#2a2e3a}
+.file-ico{width:36px;height:36px;border-radius:8px;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative}
+.file-ico.trash{background:rgba(239,68,68,0.12)}
+.recycle-item{padding:14px;background:var(--c-surface2);border-radius:12px;margin-bottom:11px;border:1px solid transparent;transition:all 0.3s;position:relative;overflow:hidden}
+.recycle-item.restoring{border-color:rgba(59,130,246,0.3)}
+.recycle-item.restored{border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.05)}
+.ri-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;gap:8px}
+.ri-title{font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px}
+.ri-time{font-size:11px;color:var(--c-text3);flex-shrink:0}
+.ri-meta{font-size:11px;color:var(--c-text3);margin-bottom:8px}
+.ri-progress{height:3px;background:var(--c-bg);border-radius:2px;overflow:hidden;margin:8px 0;display:none}
+.recycle-item.restoring .ri-progress{display:block}
+.ri-progress-fill{height:100%;width:0;background:var(--c-blue);transition:width 1.4s ease}
+.ri-content{font-size:13.5px;color:var(--c-red);line-height:1.7;padding:10px 12px;background:rgba(239,68,68,0.08);border-radius:8px;display:none;margin-top:8px}
+.recycle-item.restored .ri-content{display:block;animation:fadeInUp 0.5s ease}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ri-actions{display:flex;justify-content:flex-end;margin-top:10px;align-items:center;gap:10px}
+.ri-btn{padding:7px 16px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:var(--c-blue);border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.3s}
+.ri-btn:hover{background:rgba(59,130,246,0.25)}
+.ri-btn:disabled{opacity:0.4;cursor:not-allowed}
+.ri-done{font-size:12px;color:var(--c-green);display:none}
+.recycle-item.restored .ri-done{display:inline}
+.recycle-item.restored .ri-btn{display:none}
+
+/* ===== 加密相册 ===== */
+.album-lock{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;text-align:center}
+.al-icon{width:60px;height:60px;border-radius:14px;background:rgba(168,85,247,0.15);display:flex;align-items:center;justify-content:center;margin-bottom:16px;position:relative}
+.al-icon::before{content:"";width:26px;height:20px;border:2px solid var(--c-purple);border-radius:4px}
+.al-icon::after{content:"";width:14px;height:10px;border:2px solid var(--c-purple);border-top:none;border-radius:0 0 4px 4px;position:absolute;top:24px}
+.al-title{font-size:15px;margin-bottom:8px}
+.al-desc{font-size:12px;color:var(--c-text3);line-height:1.8;margin-bottom:22px;max-width:260px}
+.al-pin{display:flex;gap:14px;margin-bottom:18px}
+.al-dot{width:40px;height:40px;border-radius:50%;border:2px solid var(--c-surface2);background:rgba(255,255,255,0.03);transition:all 0.3s}
+.al-dot.filled{border-color:var(--c-purple);background:rgba(168,85,247,0.18);box-shadow:0 0 12px rgba(168,85,247,0.25)}
+.al-dot.error{border-color:var(--c-red);background:rgba(239,68,68,0.12);animation:shake 0.4s}
+.al-dot.ok{border-color:var(--c-green);background:rgba(34,197,94,0.18)}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.al-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:240px;margin:0 auto}
+.al-key{width:60px;height:60px;border-radius:50%;border:1px solid var(--c-surface2);background:rgba(255,255,255,0.03);color:var(--c-text);font-size:22px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;font-family:inherit;margin:0 auto}
+.al-key:active{background:rgba(168,85,247,0.15);transform:scale(0.95)}
+.al-key.del{font-size:16px;color:var(--c-text3)}
+.al-err{color:var(--c-red);font-size:12px;height:18px;margin-top:12px}
+.al-hint{font-size:11px;color:var(--c-text3);margin-top:18px;line-height:1.8;max-width:240px}
+.album-photo{background:var(--c-surface2);border-radius:12px;overflow:hidden;border:1px solid rgba(239,68,68,0.12);margin-bottom:12px}
+.ap-img{height:130px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.ap-img.i1{background:linear-gradient(135deg,#3a2a1a,#1a1410)}
+.ap-img.i2{background:linear-gradient(135deg,#2a1a2a,#1a1014)}
+.ap-img.i3{background:linear-gradient(135deg,#1a2a3a,#0e1620)}
+.ap-img.i4{background:linear-gradient(135deg,#2a2a1a,#181410)}
+.ap-tag{position:absolute;top:8px;right:8px;padding:2px 8px;background:rgba(239,68,68,0.85);color:#fff;font-size:10px;border-radius:4px}
+.ap-desc{padding:12px;font-size:12.5px;color:var(--c-text2);line-height:1.8}
+.ap-label{font-size:11px;color:var(--c-red);margin-bottom:5px;font-weight:600}
+
+/* ===== 企业查询 ===== */
+.company-card{background:var(--c-surface2);border-radius:12px;overflow:hidden;margin-bottom:12px}
+.company-head{padding:16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,0.05)}
+.company-logo{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff}
+.company-name{font-size:16px;font-weight:600}
+.company-status{font-size:11px;color:var(--c-green);margin-top:3px;display:flex;align-items:center;gap:5px}
+.verified{padding:2px 8px;background:rgba(34,197,94,0.12);color:var(--c-green);font-size:11px;border-radius:4px}
+.company-body{padding:6px 16px}
+.company-row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:13px;gap:12px}
+.company-row:last-child{border-bottom:none}
+.company-label{color:var(--c-text3);flex-shrink:0}
+.company-value{text-align:right;color:var(--c-text2);line-height:1.5}
+.addr-compare{margin-top:14px;padding:16px;background:var(--c-surface2);border-radius:12px;display:none}
+.addr-compare.show{display:block;animation:fadeInUp 0.5s ease}
+.addr-cmp-title{font-size:13px;font-weight:600;margin-bottom:12px;color:var(--c-amber);display:flex;align-items:center;gap:6px}
+.addr-cmp-row{display:flex;gap:10px;margin-bottom:10px}
+.addr-box{flex:1;padding:11px;border-radius:8px}
+.addr-box.reg{background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15)}
+.addr-box.rep{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15)}
+.addr-box .ab-l{font-size:11px;margin-bottom:4px}
+.addr-box.reg .ab-l{color:var(--c-green)}
+.addr-box.rep .ab-l{color:var(--c-red)}
+.addr-box .ab-v{font-size:12px;color:var(--c-text2);line-height:1.6}
+.addr-warn{font-size:12px;color:var(--c-red);line-height:1.8;margin-top:6px}
+.cmp-btn{width:100%;padding:12px;background:var(--c-surface2);border:1px solid var(--c-surface2);color:var(--c-blue);border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit;margin-top:12px;transition:all 0.3s}
+.cmp-btn:hover{background:#2a2e3a}
+
+/* ===== 真相揭示 ===== */
+#truth-overlay{position:absolute;inset:0;z-index:200;background:rgba(0,0,0,0.96);display:none;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center}
+#truth-overlay.show{display:flex;animation:fadeIn 0.8s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.truth-lines{max-height:340px;overflow-y:auto;width:100%;padding:0 6px}
+.truth-lines::-webkit-scrollbar{width:0}
+.truth-line{font-size:15px;line-height:2.2;color:var(--c-text2);opacity:0;transform:translateY(10px);transition:all 0.5s}
+.truth-line.show{opacity:1;transform:translateY(0)}
+.truth-line.hl{color:var(--c-red);font-weight:600;font-size:16px}
+.truth-div{width:40px;height:1px;background:var(--c-red);margin:14px auto;opacity:0;transition:opacity 0.8s}
+.truth-div.show{opacity:1}
+.truth-conc{font-size:13.5px;color:var(--c-amber);line-height:1.9;margin-top:16px;padding:16px;background:rgba(245,158,11,0.08);border-radius:8px;border-left:3px solid var(--c-amber);opacity:0;transition:opacity 0.8s;text-align:left}
+.truth-conc.show{opacity:1}
+.truth-btn{margin-top:24px;padding:12px 42px;background:var(--c-surface2);border:1px solid var(--c-text3);color:var(--c-text);border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;letter-spacing:2px;transition:all 0.3s;opacity:0}
+.truth-btn.show{opacity:1}
+.truth-btn:hover{border-color:var(--c-red);color:var(--c-red)}
+
+/* ===== 通用彩蛋 ===== */
+.egg-card{background:var(--c-surface2);border-radius:14px;padding:16px;margin-bottom:14px}
+.egg-title{font-size:15px;font-weight:600;margin-bottom:8px}
+.egg-sub{font-size:12px;color:var(--c-text3);margin-bottom:6px}
+.list-row{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--c-surface2);border-radius:10px;margin-bottom:7px;cursor:pointer;transition:background 0.2s}
+.list-row:hover{background:#2a2e3a}
+.list-row .lr-t{font-size:14px}
+.list-row .lr-s{font-size:12px;color:var(--c-text3);margin-top:2px}
+.list-row .lr-r{font-size:12px;color:var(--c-text3)}
+.calc-disp{text-align:right;font-size:42px;font-weight:300;padding:20px 16px;color:var(--c-text);word-break:break-all;min-height:80px}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 12px 16px}
+.calc-key{height:60px;border:none;border-radius:50%;font-size:22px;cursor:pointer;font-family:inherit;transition:filter 0.15s}
+.calc-key:active{filter:brightness(1.3)}
+.calc-key.num{background:#333336;color:#fff}
+.calc-key.fn{background:#5a5a5e;color:#fff}
+.calc-key.op{background:#ff9500;color:#fff}
+.calc-key.wide{grid-column:span 2;border-radius:30px;text-align:left;padding-left:24px}
+.np-bar{position:sticky;bottom:0;background:var(--c-surface2);border-top:1px solid var(--c-surface);padding:10px 14px;display:flex;align-items:center;gap:10px}
+.np-cover{width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,#fb2d6f,#ff6482);flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative}
+.np-cover::before{content:"";width:3px;height:18px;background:#fff;border-radius:2px;box-shadow:7px 7px 0 -1px #fff}
+.np-info{flex:1;min-width:0}
+.np-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.np-prog{height:3px;background:#3a3a3e;border-radius:2px;margin-top:5px;overflow:hidden}
+.np-prog-fill{height:100%;width:0;background:var(--c-red);transition:width 0.3s linear}
+.song-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;cursor:pointer;transition:background 0.2s}
+.song-row:hover{background:var(--c-surface2)}
+.song-row.playing{background:rgba(251,45,111,0.12)}
+.song-idx{font-size:12px;color:var(--c-text3);width:18px}
+.song-name{flex:1;font-size:14px}
+.song-name small{display:block;font-size:11px;color:var(--c-text3);margin-top:2px}
+.song-dur{font-size:12px;color:var(--c-text3)}
+.clock-city{display:flex;justify-content:space-between;align-items:center;padding:14px;border-bottom:1px solid var(--c-surface2)}
+.clock-city .cc-n{font-size:15px}.clock-city .cc-s{font-size:11px;color:var(--c-text3)}.clock-city .cc-t{font-size:26px;font-weight:200}
+.w-now{display:flex;align-items:center;gap:20px;margin:10px 0}
+.w-temp{font-size:64px;font-weight:200;line-height:1}
+.w-cond{font-size:16px}
+.w-feel{font-size:12px;color:var(--c-text3);margin-top:4px}
+.w-hour{display:flex;justify-content:space-between;padding:14px 0;border-top:1px solid var(--c-surface2);border-bottom:1px solid var(--c-surface2);margin-top:14px}
+.w-hour div{text-align:center;font-size:11px;color:var(--c-text3)}
+.w-hour div b{display:block;font-size:14px;color:var(--c-text);margin-bottom:4px}
+
+/* Toast / 弹窗 / 过渡 */
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.88);color:#fff;padding:14px 26px;border-radius:12px;font-size:14px;z-index:9999;opacity:0;pointer-events:none;transition:opacity 0.4s;max-width:300px;text-align:center;line-height:1.7}
+.toast.show{opacity:1}
+.edu-popup{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:var(--phone-w);background:var(--c-surface);border-top:2px solid var(--c-red);padding:24px 20px;border-radius:20px 20px 0 0;z-index:500;transition:transform 0.5s cubic-bezier(0.22,1,0.36,1)}
+.edu-popup.show{transform:translateX(-50%) translateY(0)}
+.edu-tag{display:inline-block;padding:3px 10px;background:rgba(239,68,68,0.15);color:var(--c-red);font-size:11px;border-radius:4px;margin-bottom:10px;letter-spacing:1px}
+.edu-title{font-size:16px;font-weight:600;margin-bottom:10px}
+.edu-text{font-size:13px;color:var(--c-text2);line-height:1.9}
+.edu-close{display:block;margin:20px auto 0;padding:11px 42px;background:var(--c-red);border:none;color:#fff;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit;letter-spacing:2px}
+#chapter-transition{position:fixed;inset:0;z-index:600;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center}
+#chapter-transition.show{display:flex;animation:fadeIn 0.8s}
+.chapter-num{font-size:12px;color:var(--c-text3);letter-spacing:6px;margin-bottom:16px}
+.chapter-name{font-size:24px;letter-spacing:4px;font-weight:300;margin-bottom:8px}
+.chapter-sub{font-size:12px;color:var(--c-red);letter-spacing:2px;margin-bottom:30px;opacity:0.85}
+.chapter-bar{width:200px;height:1px;background:var(--c-surface2);position:relative;overflow:hidden}
+.chapter-bar-fill{position:absolute;left:0;top:0;height:100%;width:0;background:var(--c-red);transition:width 2s ease}
+.fragment-anim{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:700;pointer-events:none;display:none}
+.fragment-flash{width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(239,68,68,0.5),transparent);animation:ff 0.9s ease forwards}
+@keyframes ff{0%{transform:scale(0);opacity:1}50%{transform:scale(2);opacity:0.6}100%{transform:scale(3);opacity:0}}
+</style>
+</head>
+<body>
+
+<div id="phone-frame">
+<div id="phone-screen">
+<div id="screen-scroll">
+
+<!-- 状态栏 -->
+<div class="status-bar">
+<span id="status-time">09:41</span>
+<div class="status-icons">
+<span class="sig"><i></i><i></i><i></i><i></i></span>
+<span class="wifi"></span>
+<span class="batt"><span class="batt-fill"></span></span>
+</div>
+</div>
+
+<!-- 章节开头 -->
+<div id="chapter-intro">
+<div class="ci-num">第 二 章</div>
+<div class="ci-title">裂 痕 初 现</div>
+<div class="ci-sub">难 度 · 中 高</div>
+<div class="ci-bar"><div class="ci-bar-fill" id="ci-bar-fill"></div></div>
+</div>
+
+<!-- 紧张氛围边框 -->
+<div class="tension-border" id="tension-border"></div>
+
+<!-- ===== 桌面 ===== -->
+<div class="screen show" id="home-screen">
+<div class="home-wallpaper"></div>
+<div class="home-top">
+<div class="home-greet">我的手机</div>
+<div class="home-date">7月16日 · 报到前一天<span class="blink"></span></div>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="home-progress"></div></div>
+<div class="desktop-grid">
+<button class="app-tile" onclick="openApp('wechat')"><span class="icon ic-wechat"></span><span class="app-label">微信</span><span class="app-badge" id="wechat-badge">1</span></button>
+<button class="app-tile" onclick="openApp('files')"><span class="icon ic-files"></span><span class="app-label">文件管理</span><span class="app-badge" id="files-badge">3</span></button>
+<button class="app-tile" onclick="openApp('weather')"><span class="icon ic-weather"></span><span class="app-label">天气</span></button>
+<button class="app-tile" onclick="openApp('calendar')"><span class="icon ic-calendar"></span><span class="app-label">日历</span></button>
+<button class="app-tile" onclick="openApp('photos')"><span class="icon ic-photos"></span><span class="app-label">相册</span></button>
+<button class="app-tile" onclick="openApp('clock')"><span class="icon ic-clock"></span><span class="app-label">时钟</span></button>
+<button class="app-tile" onclick="openApp('notes')"><span class="icon ic-notes"></span><span class="app-label">备忘录</span></button>
+<button class="app-tile" onclick="openApp('music')"><span class="icon ic-music"></span><span class="app-label">音乐</span></button>
+<button class="app-tile" onclick="openApp('calc')"><span class="icon ic-calc"></span><span class="app-label">计算器</span></button>
+<button class="app-tile" onclick="openApp('appstore')"><span class="icon ic-appstore"></span><span class="app-label">应用商店</span></button>
+<button class="app-tile" onclick="openApp('maps')"><span class="icon ic-maps"></span><span class="app-label">地图</span></button>
+<button class="app-tile" onclick="openApp('mail')"><span class="icon ic-mail"></span><span class="app-label">邮件</span></button>
+</div>
+<div class="dock">
+<button class="app-tile" onclick="openApp('phone')"><span class="icon ic-phone"></span><span class="app-label">电话</span></button>
+<button class="app-tile" onclick="openApp('sms')"><span class="icon ic-sms"></span><span class="app-label">短信</span></button>
+<button class="app-tile" onclick="openApp('browser')"><span class="icon ic-browser"></span><span class="app-label">浏览器</span></button>
+<button class="app-tile" onclick="openApp('settings')"><span class="icon ic-settings"></span><span class="app-label">设置</span></button>
+<button class="app-tile" onclick="openApp('camera')"><span class="icon ic-camera"></span><span class="app-label">相机</span></button>
+<button class="app-tile" onclick="openApp('music')"><span class="icon ic-music"></span><span class="app-label">音乐</span></button>
+</div>
+<div class="home-hint" id="home-hint"><b>异常</b>　明天就要去报到了，可心里总觉得不踏实。<span class="blink"></span></div>
+
+<!-- 碎片状态 -->
+<div class="clue-status">
+<div class="clue-title">关键证据碎片 <b id="clue-count">0</b>/3 · 加密相册 <b id="album-stat">未解锁</b> · 地址核查 <b id="addr-stat">未对比</b></div>
+<div class="clue-slots">
+<div class="clue-slot" id="slot-1"><div class="bar"></div><div class="lab">碎片一</div></div>
+<div class="clue-slot" id="slot-2"><div class="bar"></div><div class="lab">碎片二</div></div>
+<div class="clue-slot" id="slot-3"><div class="bar"></div><div class="lab">碎片三</div></div>
+</div>
+</div>
+</div>
+
+<!-- ===== 微信聊天 ===== -->
+<div class="screen" id="wechat-screen">
+<div class="scr-header">
+<button class="scr-back" onclick="openApp('home')">‹</button>
+<div class="scr-title center">表姐</div>
+<button class="scr-action" onclick="openApp('chatinfo')">⋮</button>
+</div>
+<div class="chat-body">
+<div class="chat-time">7月15日 20:30</div>
+<div class="msg from">在吗？我们公司正好在招人，我内推你，月薪 8000-15000，包吃包住五险一金</div>
+<div class="msg to">真的吗？这么好的条件</div>
+<div class="msg from">你准备一下材料，17号直接来报到就行，地址我发你定位了，到了找我</div>
+<div class="msg from">对了，来了之后先别联系家里，我们这边有保密协议，培训期间不让用手机，免得商业机密泄露</div>
+<div class="msg deleted">「该消息已被发送者删除」</div>
+<div class="msg deleted">「该消息已被发送者删除」</div>
+<div class="msg to">好吧……虽然有点奇怪</div>
+<div class="msg from">放心吧，都是为你好</div>
+<div class="chat-time">7月16日 09:30</div>
+<div class="msg new">明天就报到了，东西收拾好没？</div>
+<div class="msg from">到了直接上12楼找我，记得把手机调成静音，先别让其他人看到</div>
+<div class="msg deleted">「该消息已被发送者删除」</div>
+</div>
+</div>
+
+<!-- ===== 微信聊天信息 ===== -->
+<div class="screen" id="chatinfo-screen">
+<div class="scr-header">
+<button class="scr-back" onclick="openApp('wechat')">‹</button>
+<div class="scr-title center">聊天信息</div>
+</div>
+<div class="scr-body">
+<div class="info-row" onclick="showToast('备注名：表姐')"><div class="ir-t">备注名</div><div class="ir-r">表姐 ›</div></div>
+<div class="info-row" onclick="showToast('查找聊天内容功能需要会员')"><div class="ir-t">查找聊天内容</div><div class="ir-r">›</div></div>
+<div class="info-row" onclick="openApp('chatmgr')"><div class="ir-t">聊天记录管理</div><div class="ir-r red">3 条异常 ›</div></div>
+<div class="info-row" onclick="showToast('已设置为置顶')"><div class="ir-t">置顶聊天</div><div class="ir-r">已开启</div></div>
+<div class="info-row" onclick="showToast('消息免打扰已关闭')"><div class="ir-t">消息免打扰</div><div class="ir-r">关闭</div></div>
+</div>
+</div>
+
+<!-- ===== 聊天记录管理 ===== -->
+<div class="screen" id="chatmgr-screen">
+<div class="scr-header">
+<button class="scr-back" onclick="openApp('chatinfo')">‹</button>
+<div class="scr-title center">聊天记录管理</div>
+</div>
+<div class="scr-body">
+<div class="egg-sub" style="margin-bottom:12px">扫描结果 · 表姐（7月15日 - 7月16日）</div>
+<div class="clue-found" id="chatmgr-found">
+<b>发现 3 条已被删除的消息。</b><br><br>
+这些消息被发送方撤回或删除，本地缓存已被清理，但系统在「文件管理 - 回收站」中保留了恢复副本。
+</div>
+<div class="info-row" style="margin-top:14px" onclick="openApp('recycle')"><div class="ir-t">前往文件管理回收站</div><div class="ir-r red">3 项可恢复 ›</div></div>
+</div>
+</div>
+
+<!-- ===== 文件管理 ===== -->
+<div class="screen" id="files-screen">
+<div class="scr-header"><button class="scr-back" onclick="openApp('home')">‹</button><div class="scr-title center">文件管理</div></div>
+<div class="scr-body">
+<div class="egg-sub" style="margin-bottom:10px">最近文件</div>
+<div class="file-row" onclick="showToast('入职材料.pdf · 1.2MB')"><div class="file-ico"></div><div style="flex:1"><div class="lr-t">入职材料.pdf</div><div class="lr-s">7/15 · 表姐转发</div></div><div class="lr-r">›</div></div>
+<div class="file-row" onclick="showToast('报到定位.png · 已保存')"><div class="file-ico"></div><div style="flex:1"><div class="lr-t">报到定位.png</div><div class="lr-s">7/15 · 表姐发送</div></div><div class="lr-r">›</div></div>
+<div class="file-row" onclick="showToast('保密协议.pdf · 已加密')"><div class="file-ico"></div><div style="flex:1"><div class="lr-t">保密协议.pdf</div><div class="lr-s">7/15 · 已加密</div></div><div class="lr-r">›</div></div>
+
+<div class="egg-sub" style="margin:18px 0 10px">系统</div>
+<div class="file-row" onclick="openApp('recycle')" style="border:1px solid rgba(239,68,68,0.2)">
+<div class="file-ico trash"></div>
+<div style="flex:1"><div class="lr-t" style="color:var(--c-red)">回收站</div><div class="lr-s">3 项已删除文件可恢复</div></div>
+<span class="app-badge">3</span>
+</div>
+</div>
+</div>
+
+<!-- ===== 回收站 ===== -->
+<div class="screen" id="recycle-screen">
+<div class="scr-header"><button class="scr-back" onclick="openApp('files')">‹</button><div class="scr-title center">回收站</div><div style="font-size:11px;color:var(--c-text3);width:30px;text-align:right" id="recycle-count">3项</div></div>
+<div class="scr-body">
+<div class="egg-sub" style="margin-bottom:14px;line-height:1.7">以下文件已被删除，可在 30 天内恢复。点击「恢复」查看被隐藏的内容。</div>
+
+<div class="recycle-item" id="recycle-1">
+<div class="ri-head"><div class="ri-title">微信消息缓存_0715</div><div class="ri-time">删除于 7/15 21:02</div></div>
+<div class="ri-meta">来源：表姐 · 类型：文本消息</div>
+<div class="ri-progress"><div class="ri-progress-fill"></div></div>
+<div class="ri-content">
+<span style="color:var(--c-red);font-weight:600">团队通知：</span><br>
+"新人入职必须拉黑原生家庭联系方式，专心融入团队。这是对你们成长负责。"
+</div>
+<div class="ri-actions">
+<span class="ri-done">已恢复 · 碎片一</span>
+<button class="ri-btn" onclick="restoreFragment(1)">恢 复</button>
+</div>
+</div>
+
+<div class="recycle-item" id="recycle-2">
+<div class="ri-head"><div class="ri-title">聊天记录导出_培训群</div><div class="ri-time">删除于 7/15 21:05</div></div>
+<div class="ri-meta">来源：内部群 · 类型：群公告</div>
+<div class="ri-progress"><div class="ri-progress-fill"></div></div>
+<div class="ri-content">
+<span style="color:var(--c-red);font-weight:600">培训制度：</span><br>
+"拉满 5 名下线方可申请自由外出，未达标者不得擅自离开培训区域。"
+</div>
+<div class="ri-actions">
+<span class="ri-done">已恢复 · 碎片二</span>
+<button class="ri-btn" onclick="restoreFragment(2)">恢 复</button>
+</div>
+</div>
+
+<div class="recycle-item" id="recycle-3">
+<div class="ri-head"><div class="ri-title">内部文件_薪酬说明</div><div class="ri-time">删除于 7/15 21:08</div></div>
+<div class="ri-meta">来源：李经理 · 类型：文档</div>
+<div class="ri-progress"><div class="ri-progress-fill"></div></div>
+<div class="ri-content">
+<span style="color:var(--c-red);font-weight:600">薪酬模式：</span><br>
+"本岗位无底薪，收入 100% 来源于下线返利。拉人越多赚越多，上不封顶！"
+</div>
+<div class="ri-actions">
+<span class="ri-done">已恢复 · 碎片三</span>
+<button class="ri-btn" onclick="restoreFragment(3)">恢 复</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ===== 相册（含加密文件夹）===== -->
+<div class="screen" id="photos-screen">
+<div class="scr-header"><button class="scr-back" onclick="openApp('home')">‹</button><div class="scr-title center">相册</div></div>
+<div class="scr-body">
+<div class="egg-sub" style="margin-bottom:10px">最近项目</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:18px">
+<div style="aspect-ratio:1;border-radius:8px;background:linear-gradient(135deg,#5a7fa5,#3b5d80);display:flex;align-items:flex-end;padding:5px;font-size:9px;color:#fff"><span style="background:rgba(0,0,0,0.4);padding:2px 4px;border-radius:3px">阴天</span></div>
+<div style="aspect-ratio:1;border-radius:8px;background:linear-gradient(135deg,#22c55e,#15803d);display:flex;align-items:flex-end;padding:5px;font-size:9px;color:#fff"><span style="background:rgba(0,0,0,0.4);padding:2px 4px;border-radius:3px">早餐</span></div>
+<div style="aspect-ratio:1;border-radius:8px;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:flex-end;padding:5px;font-size:9px;color:#fff"><span style="background:rgba(0,0,0,0.4);padding:2px 4px;border-radius:3px">书桌</span></div>
+</div>
+
+<div class="egg-sub" style="margin-bottom:10px">相簿</div>
+<div class="file-row" onclick="openApp('album')" style="border:1px solid rgba(168,85,247,0.25)">
+<div class="file-ico" style="background:rgba(168,85,247,0.15)"></div>
+<div style="flex:1"><div class="lr-t" style="color:var(--c-purple)">加密文件夹</div><div class="lr-s">需输入 4 位密码 · 表姐让我存的"内部资料"</div></div>
+<div class="lr-r" style="color:var(--c-purple)">›</div>
+</div>
+</div>
+</div>
+
+<!-- ===== 加密相册锁 ===== -->
+<div class="screen" id="album-screen">
+<div class="scr-header"><button class="scr-back" onclick="openApp('photos')">‹</button><div class="scr-title center">加密文件夹</div></div>
+<div class="scr-body" id="album-body">
+<div id="album-lock-view">
+<div class="album-lock">
+<div class="al-icon"></div>
+<div class="al-title">加密文件夹</div>
+<div class="al-desc">此文件夹需要输入 4 位密码才能查看。</div>
+<div class="al-pin" id="al-dots">
+<div class="al-dot"></div><div class="al-dot"></div><div class="al-dot"></div><div class="al-dot"></div>
+</div>
+<div class="al-keypad">
+<button class="al-key" onclick="albumKey('1')">1</button>
+<button class="al-key" onclick="albumKey('2')">2</button>
+<button class="al-key" onclick="albumKey('3')">3</button>
+<button class="al-key" onclick="albumKey('4')">4</button>
+<button class="al-key" onclick="albumKey('5')">5</button>
+<button class="al-key" onclick="albumKey('6')">6</button>
+<button class="al-key" onclick="albumKey('7')">7</button>
+<button class="al-key" onclick="albumKey('8')">8</button>
+<button class="al-key" onclick="albumKey('9')">9</button>
+<button class="al-key" style="visibility:hidden"></button>
+<button class="al-key" onclick="albumKey('0')">0</button>
+<button class="al-key del" onclick="albumDelete()">⌫</button>
+</div>
+<div class="al-err" id="al-err"></div>
+</div>
+</div>
+<div id="album-unlock-view" style="display:none">
+<div style="font-size:13px;color:var(--c-green);margin-bottom:14px;display:flex;align-items:center;gap:6px">● 文件夹已解锁 · 以下为内部资料</div>
+<div class="album-photo">
+<div class="ap-img i1"><span class="ap-tag">证据</span></div>
+<div class="ap-desc"><div class="ap-label">照片 1 · 课堂</div>拥挤的"培训教室"，十几人挤在一个小房间里，没有工位分隔。白板上写着"冲刺业绩目标"，旁边画着金字塔形的人头结构图，顶端标着"经理"，底层密密麻麻全是"新人"。</div>
+</div>
+<div class="album-photo">
+<div class="ap-img i2"><span class="ap-tag">证据</span></div>
+<div class="ap-desc"><div class="ap-label">照片 2 · 教材</div>墙上的"培训教材"，内容全是如何拉人入伙、话术模板、应对家人追问的标准答案。封面写着《新人融入指南》，扉页一句话："先切断，再重塑。"</div>
+</div>
+<div class="album-photo">
+<div class="ap-img i3"><span class="ap-tag">证据</span></div>
+<div class="ap-desc"><div class="ap-label">照片 3 · 宿舍</div>宿舍环境——简陋的上下铺，多人混住，门从外面反锁着。窗户被报纸糊住，看不到外面。角落堆着统一发放的"工服"，所有人都穿一样的。</div>
+</div>
+<div class="album-photo">
+<div class="ap-img i4"><span class="ap-tag">证据</span></div>
+<div class="ap-desc"><div class="ap-label">照片 4 · 手机</div>桌上整齐排列着十几部手机，全部处于"上缴"状态。旁边一张纸条："培训期间手机统一保管，结业归还。违规使用一次，扣除全部提成。"</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ===== 浏览器 → 企业查询 ===== -->
+<div class="screen" id="browser-screen">
+<div class="scr-header"><button class="scr-back" onclick="openApp('home')">‹</button><div class="scr-title center">浏览器</div></div>
+<div class="scr-body">
+<div style="background:var(--c-surface2);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--c-text3);margin-bottom:16px">搜索或输入网址</div>
+<div class="egg-sub">常用网站</div>
+<div class="list-row" onclick="openApp('company')"><div class="lr-t" style="color:var(--c-blue)">企业信用信息公示系统</div><div class="lr-r">›</div></div>
+<div class="list-row" onclick="showToast('新闻门户 · 暂未打开')"><div class="lr-t">新闻门户</div><div class="lr-r">›</div></div>
+<div class="list-row" onclick="showToast('XX市公交查询 · 暂未打开')"><div class="lr-t">XX市公交查询</div><div class="lr-r">›</div></div>
+</div>
+</div>
+
+<!-- ===== 企业查询页 ===== -->
+<div class="screen" id="company-screen">
+<div class="scr-header"><button class="scr-back" onclick="openApp('browser')">‹</button><div class="scr-title center">企业信息查询</div></div>
+<div class="scr-body">
+<div class="egg-sub" style="text-align:center;margin-bottom:14px">数据来源：企业信用信息公示系统</div>
+
+<div class="company-card">
+<div class="company-head">
+<div class="company-logo" style="background:linear-gradient(135deg,#3b82f6,#6366f1)">鼎</div>
+<div>
+<div class="company-name">鼎盛宏图商务咨询有限公司</div>
+<div class="company-status"><span class="verified">已认证</span>在营 · 成立2年</div>
+</div>
+</div>
+<div class="company-body">
+<div class="company-row"><span class="company-label">统一社会信用代码</span><span class="company-value">91360100MA38XXXX9F</span></div>
+<div class="company-row"><span class="company-label">法定代表人</span><span class="company-value">张某某</span></div>
+<div class="company-row"><span class="company-label">注册资本</span><span class="company-value">500万元人民币</span></div>
+<div class="company-row"><span class="company-label">注册地址</span><span class="company-value">XX省XX市XX区XX大道166号<br>鼎盛国际大厦25层（CBD商务区）</span></div>
+<div class="company-row"><span class="company-label">经营范围</span><span class="company-value">商务咨询、市场推广、<br>企业管理咨询、会务服务</span></div>
+<div class="company-row"><span class="company-label">经营状态</span><span class="company-value" style="color:var(--c-green)">存续（在营）</span></div>
+</div>
+</div>
+
+<button class="cmp-btn" id="cmp-btn" onclick="toggleAddr()">对比注册地址与报到地址</button>
+
+<div class="addr-compare" id="addr-compare">
+<div class="addr-cmp-title">地址对比</div>
+<div class="addr-cmp-row">
+<div class="addr-box reg"><div class="ab-l">注册地址（工商公示）</div><div class="ab-v">XX大道166号<br>鼎盛国际大厦25层<br>（CBD商务区）</div></div>
+<div class="addr-box rep"><div class="ab-l">报到地址（表姐给的）</div><div class="ab-v">XX路88号 · 12楼<br>（城中村旧楼）</div></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ===== 天气 ===== -->
+<div class="screen" id="weather-screen">
+<div class="scr-header"><button class="scr-back" onclick="openApp('home')">‹</button><div class="scr-title center">天气</div></div>
+<div class="scr-body">
+<div style="font-size:13px;color:var(--c-text3)">XX市 · 7月16日</div>
+<div class="w-now">
+<div class="w-temp">28°</div>
+<div><div class="w-cond">多云转雨</div><div class="w-feel">体感 30° · 明天有雷阵雨，记得带伞</div></div>
+</div>
+<div style="font-size:13px;color:var(--c-text2);line-height:1.9">今天多云，午后有阵雨。明天（报到日）有雷阵雨，出门务必带伞，注意路况。</div>
+<div class="w-hour">
+<div><b>现在</b>28°</div>
+<div><b>12时</b>29°</div>
+<div><b>14时</b>27°</div>
+<div><b>16时</b>26°</div>
+<div><b>18时</b>25°</div>
+<div><b>明天</b>24°</div>
+</div>
+<div class="egg-card" style="margin-top:14px"><div class="egg-sub">空气质量</div><div class="egg-title" style="color:var(--c-amber)">轻度污染 · 92</div></div>
+</div>
+</div>
+
+<!-- ===== 计算器 ===== -->
+<div class="screen" id="calc-screen">
+<div class="scr-header"><button class="scr-back" onclick="openApp('home')">‹</button><div class="scr-title center">计算器</div></div>
+<div style="flex:1;display:flex;flex-direction:column">
+<div class="calc-disp" id="calc-disp">0</div>
+<div class="calc-grid">
+<button class="calc-key fn" onclick="calcAct('clear')">AC</button>
+<button class="calc-key fn" onclick="calcAct('neg')">±</button>
+<button class="calc-key fn" onclick="calcAct('pct')">%</button>
+<button class="calc-key op" onclick="calcOp('÷')">÷</button>
+<button class="calc-key num" onclick="calcNum('7')">7</button>
+<button class="calc-key num" onclick="calcNum('8')">8</button>
+<button class="calc-key num" onclick="calcNum('9')">9</button>
+<button class="calc-key op" onclick="calcOp('×')">×</button>
+<button class="calc-key num" onclick="calcNum('4')">4</button>
+<button class="calc-key num" onclick="calcNum('5')">5</button>
+<button class="calc-key num" onclick="calcNum('6')">6</button>
+<button class="calc-key op" onclick="calcOp('-')">−</button>
+<button class="calc-key num" onclick="calcNum('1')">1</button>
+<button class="calc-key num" onclick="calcNum('2')">2</button>
+<button class="calc-key num" onclick="calcNum('3')">3</button>
+<button class="calc-key op" onclick="calcOp('+')">+</button>
+<button class="calc-key num wide" onclick="calcNum('0')">0</button>
+<button class="calc-key num" onclick="calcNum('.')">.</button>
+<button class="calc-key op" onclick="calcEq()">=</button>
+</div>
+</div>
+</div>
+
+<!-- ===== 音乐 ===== -->
+<div class="screen" id="music-screen">
+<div class="scr-header"><button class="scr-back" onclick="openApp('home')">‹</button><div class="scr-title center">音乐</div></div>
+<div class="scr-body" style="padding-bottom:0">
+<div class="egg-sub" style="padding:0 4px 10px">播放列表 · 我的收藏</div>
+<div id="song-list">
+<div class="song-row" onclick="playSong(0)"><span class="song-idx">1</span><div class="song-name">起风了<small>买辣椒也用券</small></div><span class="song-dur">5:25</span></div>
+<div class="song-row" onclick="playSong(1)"><span class="song-idx">2</span><div class="song-name">平凡之路<small>朴树</small></div><span class="song-dur">5:00</span></div>
+<div class="song-row" onclick="playSong(2)"><span class="song-idx">3</span><div class="song-name">夜空中最亮的星<small>逃跑计划</small></div><span class="song-dur">4:08</span></div>
+<div class="song-row" onclick="playSong(3)"><span class="song-idx">4</span><div class="song-name">海阔天空<small>Beyond</small></div><span class="song-dur">5:25</span></div>
+<div class="song-row" onclick="playSong(4)"><span class="song-idx">5</span><div class="song-name">明天会更好<small>群星</small></div><span class="song-dur">4:48</span></div>
+</div>
+</div>
+<div class="np-bar" id="np-bar" style="display:none">
+<div class="np-cover"></div>
+<div class="np-info"><div class="np-name" id="np-name">-</div><div class="np-prog"><div class="np-prog-fill" id="np-prog-fill"></div></div></div>
+<div style="font-size:11px;color:var(--c-text3)" id="np-time">0:00</div>
+</div>
+</div>
+
+<!-- ===== 时钟 ===== -->
+<div class="screen" id="clock-screen">
+<div class="scr-header"><button class="scr-back" onclick="openApp('home')">‹</button><div class="scr-title center">世界时钟</div></div>
+<div class="scr-body">
+<div class="clock-city"><div><div class="cc-n">北京</div><div class="cc-s">中国</div></div><div class="cc-t" id="ct-bj">-</div></div>
+<div class="clock-city"><div><div class="cc-n">伦敦</div><div class="cc-s">英国</div></div><div class="cc-t" id="ct-lon">-</div></div>
+<div class="clock-city"><div><div class="cc-n">纽约</div><div class="cc-s">美国</div></div><div class="cc-t" id="ct-ny">-</div></div>
+<div class="clock-city"><div><div class="cc-n">东京</div><div class="cc-s">日本</div></div><div class="cc-t" id="ct-tk">-</div></div>
+<div class="egg-card" style="margin-top:16px"><div class="egg-sub">闹钟</div><div class="egg-title" style="font-size:14px;font-weight:400">06:30　起床赶报到　<span style="color:var(--c-red)">已开启</span></div></div>
+</div>
+</div>
+
+<!-- ===== 备忘录 ===== -->
+<div class="screen" id="notes-screen">
+<div class="scr-header"><button class="scr-back" onclick="openApp('home')">‹</button><div class="scr-title center">备忘录</div></div>
+<div class="scr-body">
+<div class="list-row" onclick="openNote(0)"><div><div class="lr-t">读书摘抄</div><div class="lr-s">《活着》——人是为了活着本身而活着…</div></div><div class="lr-r">7/16</div></div>
+<div class="list-row" onclick="openNote(1)"><div><div class="lr-t">明天的待办</div><div class="lr-s">报到、交材料、带换洗衣物…</div></div><div class="lr-r">7/15</div></div>
+<div class="list-row" onclick="openNote(2)"><div><div class="lr-t">心里话</div><div class="lr-s">总觉得哪里不对劲……</div></div><div class="lr-r">7/16</div></div>
+</div>
+</div>
+<div class="screen" id="note-detail-screen">
+<div class="scr-header"><button class="scr-back" onclick="openApp('notes')">‹</button><div class="scr-title center" id="note-detail-title">备忘录</div></div>
+<div class="scr-body" id="note-detail-body" style="font-size:14px;line-height:2;color:var(--c-text2)"></div>
+</div>
+
+<!-- ===== 日历 ===== -->
+<div class="screen" id="calendar-screen">
+<div class="scr-header"><button class="scr-back" onclick="openApp('home')">‹</button><div class="scr-title center">日历 · 7月</div></div>
+<div class="scr-body">
+<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px" id="cal-grid"></div>
+<div style="margin-top:16px;font-size:12px;color:var(--c-text3);line-height:2">
+<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c-red);margin-right:6px;vertical-align:middle"></span>今天（7月16日）<br>
+<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c-amber);margin-right:6px;vertical-align:middle"></span>7月17日 · 入职报到
+</div>
+</div>
+</div>
+
+<!-- ===== 应用商店 / 地图 / 邮件 / 电话 / 短信 / 设置（轻量彩蛋）===== -->
+<div class="screen" id="appstore-screen">
+<div class="scr-header"><button class="scr-back" onclick="openApp('home')">‹</button><div class="scr-title center">应用商店</div></div>
+<div class="scr-body">
+<div class="egg-card"><div class="egg-sub">今日推荐</div><div style="display:flex;align-items:center;gap:12px;margin-top:6px"><div style="width:52px;height:52px;border-radius:13px;background:linear-gradient(135deg,#3b82f6,#6366f1)"></div><div style="flex:1"><div class="egg-title">极简记账</div><div class="egg-sub">轻松记录每一笔开销</div></div><button style="padding:6px 16px;background:rgba(59,130,246,0.15);color:var(--c-blue);border:none;border-radius:14px;font-size:13px;cursor:pointer;font-family:inherit">获取</button></div></div>
+<div class="egg-card"><div class="egg-sub">热门榜单</div><div class="list-row" style="margin:6px 0"><div class="lr-t">1. 短视频</div><div class="lr-r">社交</div></div><div class="list-row" style="margin:6px 0"><div class="lr-t">2. 出行打车</div><div class="lr-r">出行</div></div></div>
+</div>
+</div>
+<div class="screen" id="maps-screen">
+<div class="scr-header"><button class="scr-back" onclick="openApp('home')">‹</button><div class="scr-title center">地图</div></div>
+<div style="flex:1;position:relative;background:linear-gradient(135deg,#1a3a2a,#0f1f17);overflow:hidden">
+<div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 40px,rgba(255,255,255,0.04) 40px 41px),repeating-linear-gradient(90deg,transparent 0 40px,rgba(255,255,255,0.04) 40px 41px)"></div>
+<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center"><div style="width:24px;height:24px;border-radius:50% 50% 50% 0;background:#ff3b30;transform:rotate(-45deg);box-shadow:0 0 0 3px #fff,0 4px 10px rgba(0,0,0,0.4)"></div><div style="margin-top:8px;background:rgba(0,0,0,0.7);padding:5px 10px;border-radius:6px;font-size:12px">当前位置 · XX市</div></div>
+</div>
+</div>
+<div class="screen" id="mail-screen"><div class="scr-header"><button class="scr-back" onclick="openApp('home')">‹</button><div class="scr-title center">收件箱</div></div><div class="scr-body"><div class="list-row"><div><div class="lr-t">表姐</div><div class="lr-s">转发：入职材料清单（附件）</div></div><div class="lr-r">7/15</div></div><div class="list-row"><div><div class="lr-t">招聘网</div><div class="lr-s">您本周有 3 条新面试邀请</div></div><div class="lr-r">7/13</div></div></div></div>
+<div class="screen" id="phone-app-screen"><div class="scr-header"><button class="scr-back" onclick="openApp('home')">‹</button><div class="scr-title center">最近通话</div></div><div class="scr-body"><div class="list-row"><div><div class="lr-t">表姐</div><div class="lr-s">今早 09:30 · 通话 1 分 08 秒</div></div><div class="lr-r" style="color:var(--c-green)">已接</div></div><div class="list-row"><div><div class="lr-t">妈妈</div><div class="lr-s">7/15 19:08 · 未接</div></div><div class="lr-r" style="color:var(--c-red)">未接</div></div></div></div>
+<div class="screen" id="sms-screen"><div class="scr-header"><button class="scr-back" onclick="openApp('home')">‹</button><div class="scr-title center">信息</div></div><div class="scr-body"><div class="list-row"><div><div class="lr-t">表姐</div><div class="lr-s">明天到了直接上12楼</div></div><div class="lr-r">今天</div></div><div class="list-row"><div><div class="lr-t">妈妈</div><div class="lr-s">工作的事跟妈说一声啊</div></div><div class="lr-r">7/15</div></div></div></div>
+<div class="screen" id="settings-screen"><div class="scr-header"><button class="scr-back" onclick="openApp('home')">‹</button><div class="scr-title center">设置</div></div><div class="scr-body"><div class="list-row"><div class="lr-t">飞行模式</div><div class="lr-r">关</div></div><div class="list-row"><div class="lr-t">无线局域网</div><div class="lr-r">已连接</div></div><div class="list-row"><div class="lr-t">蓝牙</div><div class="lr-r">关</div></div><div class="list-row"><div class="lr-t">电池</div><div class="lr-r" style="color:var(--c-amber)">64%</div></div></div></div>
+<div class="screen" id="camera-screen"><div class="scr-header"><button class="scr-back" onclick="openApp('home')">‹</button><div class="scr-title center">相机</div></div><div class="scr-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px"><div style="width:200px;height:260px;background:linear-gradient(180deg,#1a1d24,#0f1115);border-radius:16px;display:flex;align-items:center;justify-content:center;border:1px solid var(--c-surface2);margin-bottom:20px;position:relative;overflow:hidden"><div style="position:absolute;top:12px;right:12px;width:8px;height:8px;background:var(--c-red);border-radius:50%;animation:blink 2s infinite"></div><div style="text-align:center;color:var(--c-text3)"><div style="font-size:36px;margin-bottom:8px;opacity:0.3">●</div><div style="font-size:12px">暂无照片</div></div></div><div style="font-size:12px;color:var(--c-text3);text-align:center;line-height:1.8">相册为空<br>最近没有拍摄任何照片</div></div></div>
+
+</div><!-- screen-scroll -->
+</div><!-- phone-screen -->
+</div><!-- phone-frame -->
+
+<!-- 真相揭示 -->
+<div id="truth-overlay">
+<div class="truth-lines" id="truth-lines">
+<div class="truth-line" data-d="300">你拼凑出了所有被隐藏的碎片……</div>
+<div class="truth-div" data-d="1100"></div>
+<div class="truth-line hl" data-d="1500">「新人必须拉黑原生家庭」</div>
+<div class="truth-line hl" data-d="2100">「拉满 5 人方可自由外出」</div>
+<div class="truth-line hl" data-d="2700">「无底薪，收入 100% 靠人头返利」</div>
+<div class="truth-div" data-d="3500"></div>
+<div class="truth-line" data-d="3900">加密相册里，是拥挤的宿舍与洗脑的课堂。</div>
+<div class="truth-line" data-d="4500">注册在 CBD 的公司，报到却在城中村的旧楼。</div>
+<div class="truth-line" data-d="5200">这不是一份工作。</div>
+<div class="truth-line" data-d="5700">这是一个精心设计的传销骗局。</div>
+<div class="truth-line" data-d="6300">你的表姐，也不过是这个骗局中的一环。</div>
+<div class="truth-conc" data-d="7100">
+<strong>传销的三大核心特征：</strong><br>
+1. <span style="color:var(--c-red)">拉人头</span>——以发展下线数量为收入来源<br>
+2. <span style="color:var(--c-red)">限制自由</span>——没收手机、反锁房门、禁止外出<br>
+3. <span style="color:var(--c-red)">切断社交</span>——要求拉黑家人、隔绝外界信息<br><br>
+幸亏你在报到前一天，拼出了真相。
+</div>
+</div>
+<button class="truth-btn" data-d="8500" onclick="showTruthEdu()">继 续</button>
+</div>
+
+<!-- 章节过渡 / Toast / 科普 / 碎片动画 -->
+<div id="chapter-transition">
+<div class="chapter-num" id="ct-num"></div>
+<div class="chapter-name" id="ct-name"></div>
+<div class="chapter-sub" id="ct-sub"></div>
+<div class="chapter-bar"><div class="chapter-bar-fill" id="ct-bar"></div></div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="edu-popup" id="edu-popup">
+<span class="edu-tag">防 骗 科 普</span>
+<div class="edu-title" id="edu-title"></div>
+<div class="edu-text" id="edu-text"></div>
+<button class="edu-close" onclick="closeEduAndTransition()">了 解</button>
+</div>
+<div class="fragment-anim" id="fragment-anim"></div>
+
+<script>
+// ============ 全局状态 ============
+const state={
+  fragments:[false,false,false],
+  albumUnlocked:false,
+  addrCompared:false,
+  truthShown:false,
+  currentScreen:'home-screen',
+  albumInput:'',
+  albumLocked:false
+};
+const fragNames=['','拉黑家人','限制自由','人头返利'];
+
+// ============ 时间 ============
+function updateTime(){
+  const now=new Date();
+  const h=String(now.getHours()).padStart(2,'0');
+  const m=String(now.getMinutes()).padStart(2,'0');
+  const el=document.getElementById('status-time');if(el)el.textContent=h+':'+m;
+}
+updateTime();setInterval(updateTime,30000);
+
+// ============ 章节开头 ============
+window.addEventListener('load',()=>{
+  setTimeout(()=>{document.getElementById('ci-bar-fill').style.width='100%';},200);
+  setTimeout(()=>{
+    document.getElementById('chapter-intro').classList.add('hide');
+    setTimeout(()=>{document.getElementById('tension-border').classList.add('active');},1200);
+  },3500);
+});
+
+// ============ 屏幕切换（null安全）============
+function hideAllScreens(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
+}
+function showScreen(id){
+  hideAllScreens();
+  const el=document.getElementById(id);
+  if(el)el.classList.add('show');
+  state.currentScreen=id;
+  document.getElementById('screen-scroll').scrollTop=0;
+}
+function openApp(name){
+  const map={home:'home-screen',wechat:'wechat-screen',chatinfo:'chatinfo-screen',chatmgr:'chatmgr-screen',files:'files-screen',recycle:'recycle-screen',photos:'photos-screen',album:'album-screen',browser:'browser-screen',company:'company-screen',weather:'weather-screen',calc:'calc-screen',music:'music-screen',clock:'clock-screen',notes:'notes-screen',calendar:'calendar-screen',appstore:'appstore-screen',maps:'maps-screen',mail:'mail-screen',phone:'phone-app-screen',sms:'sms-screen',settings:'settings-screen',camera:'camera-screen'};
+  if(name==='wechat'){showScreen('wechat-screen');const b=document.getElementById('wechat-badge');if(b)b.style.display='none';}
+  else if(name==='clock')renderClock();
+  else if(name==='calendar')renderCalendar();
+  else showScreen(map[name]);
+}
+
+// ============ 回收站 - 恢复碎片 ============
+function restoreFragment(num){
+  if(state.fragments[num-1])return;
+  const item=document.getElementById('recycle-'+num);
+  const btn=item.querySelector('.ri-btn');
+  btn.disabled=true;btn.textContent='恢复中…';
+  item.classList.add('restoring');
+  // 进度动画
+  requestAnimationFrame(()=>{item.querySelector('.ri-progress-fill').style.width='100%';});
+  setTimeout(()=>{
+    item.classList.remove('restoring');
+    item.classList.add('restored');
+    state.fragments[num-1]=true;
+    showFragmentAnim();
+    updateClueUI();
+    showToast('证据碎片已恢复：'+fragNames[num]);
+    updateProgress();
+    checkTruth();
+  },1500);
+}
+function showFragmentAnim(){
+  const a=document.getElementById('fragment-anim');
+  a.style.display='block';a.innerHTML='<div class="fragment-flash"></div>';
+  setTimeout(()=>{a.style.display='none';a.innerHTML='';},900);
+}
+function updateClueUI(){
+  const cnt=state.fragments.filter(Boolean).length;
+  document.getElementById('clue-count').textContent=cnt;
+  state.fragments.forEach((f,i)=>{document.getElementById('slot-'+(i+1)).classList.toggle('filled',f);});
+  const remain=state.fragments.filter(f=>!f).length;
+  const rc=document.getElementById('recycle-count');if(rc)rc.textContent=remain+'项';
+  const fb=document.getElementById('files-badge');
+  if(fb){if(remain===0){fb.classList.add('done');fb.textContent='✓';}else fb.textContent=remain;}
+}
+
+// ============ 加密相册 ============
+function albumKey(key){
+  if(state.albumUnlocked||state.albumLocked)return;
+  if(state.albumInput.length>=4)return;
+  state.albumInput+=key;
+  updateAlbumDots();
+  if(state.albumInput.length===4){
+    state.albumLocked=true;
+    setTimeout(checkAlbumPassword,300);
+  }
+}
+function albumDelete(){
+  if(state.albumUnlocked||state.albumLocked)return;
+  state.albumInput=state.albumInput.slice(0,-1);
+  updateAlbumDots();
+  const e=document.getElementById('al-err');if(e)e.textContent='';
+}
+function updateAlbumDots(){
+  document.querySelectorAll('#al-dots .al-dot').forEach((d,i)=>{
+    d.classList.remove('filled','error','ok');
+    if(i<state.albumInput.length)d.classList.add('filled');
+  });
+}
+function checkAlbumPassword(){
+  const dots=document.querySelectorAll('#al-dots .al-dot');
+  if(state.albumInput==='0717'){
+    document.getElementById('al-err').textContent='';
+    dots.forEach(d=>{d.classList.remove('filled');d.classList.add('ok');});
+    showToast('文件夹已解锁');
+    state.albumUnlocked=true;
+    setTimeout(()=>{
+      document.getElementById('album-lock-view').style.display='none';
+      document.getElementById('album-unlock-view').style.display='block';
+      document.getElementById('album-stat').textContent='已解锁';
+      document.getElementById('album-stat').style.color='var(--c-green)';
+    },600);
+    updateProgress();
+    checkTruth();
+  }else{
+    document.getElementById('al-err').textContent='密码错误，再想想';
+    dots.forEach(d=>d.classList.add('error'));
+    setTimeout(()=>{
+      state.albumInput='';
+      dots.forEach(d=>d.classList.remove('filled','error'));
+      document.getElementById('al-err').textContent='';
+      state.albumLocked=false;
+    },600);
+  }
+}
+document.addEventListener('keydown',e=>{
+  if(state.currentScreen!=='album-screen')return;
+  if(state.albumUnlocked||state.albumLocked)return;
+  if(e.key>='0'&&e.key<='9'){e.preventDefault();albumKey(e.key);}
+  else if(e.key==='Backspace'){e.preventDefault();albumDelete();}
+});
+
+// ============ 企业查询 - 地址对比 ============
+function toggleAddr(){
+  const c=document.getElementById('addr-compare');
+  const btn=document.getElementById('cmp-btn');
+  if(!state.addrCompared){
+    c.classList.add('show');
+    btn.textContent='收起地址对比';
+    state.addrCompared=true;
+    document.getElementById('addr-stat').textContent='已对比';
+    document.getElementById('addr-stat').style.color='var(--c-red)';
+    updateProgress();
+    checkTruth();
+  }else{
+    c.classList.toggle('show');
+    btn.textContent=c.classList.contains('show')?'收起地址对比':'对比注册地址与报到地址';
+  }
+}
+
+// ============ 进度 ============
+function updateProgress(){
+  let pct=state.fragments.filter(Boolean).length*20;
+  if(state.albumUnlocked)pct+=20;
+  if(state.addrCompared)pct+=20;
+  pct=Math.min(pct,100);
+  document.getElementById('home-progress').style.width=pct+'%';
+}
+
+// ============ 真相揭示 ============
+function checkTruth(){
+  if(state.truthShown)return;
+  if(state.fragments.every(Boolean)&&state.albumUnlocked&&state.addrCompared){
+    state.truthShown=true;
+    setTimeout(showTruthReveal,900);
+  }
+}
+function showTruthReveal(){
+  const o=document.getElementById('truth-overlay');
+  o.classList.add('show');
+  o.querySelectorAll('[data-d]').forEach(el=>{
+    const d=parseInt(el.getAttribute('data-d'));
+    setTimeout(()=>el.classList.add('show'),d);
+  });
+}
+function showTruthEdu(){
+  showEdu('传销的伪装与识破','传销团伙会刻意删除、伪装证据，用合法公司外壳包装骗局：注册正规公司、伪造工商信息、制作专业话术。普通人仅凭肉眼难以分辨，关键要看工作模式是否涉及"拉人头""限制自由""切断社交"。一旦入职前就被要求上交手机、保密、拉黑家人——请立即停止，这几乎可以判定是传销。');
+}
+
+// ============ 科普弹窗 ============
+function showEdu(title,text){
+  document.getElementById('edu-title').textContent=title;
+  document.getElementById('edu-text').textContent=text;
+  document.getElementById('edu-popup').classList.add('show');
+}
+function closeEduAndTransition(){
+  document.getElementById('edu-popup').classList.remove('show');
+  setTimeout(()=>{
+    showChapterTransition('第 三 章','囚 笼 残 响','难 度 · 高',()=>{
+      window.location.href='chapter3.html';
+    });
+  },500);
+}
+
+// ============ 章节过渡 ============
+function showChapterTransition(num,name,sub,callback){
+  const t=document.getElementById('chapter-transition');
+  document.getElementById('ct-num').textContent=num;
+  document.getElementById('ct-name').textContent=name;
+  document.getElementById('ct-sub').textContent=sub||'';
+  t.classList.add('show');
+  document.getElementById('ct-bar').style.width='0';
+  setTimeout(()=>{document.getElementById('ct-bar').style.width='100%';},200);
+  setTimeout(()=>{t.classList.remove('show');if(callback)callback();},3000);
+}
+
+// ============ Toast ============
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(window._toastT);window._toastT=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+// ============ 计算器 ============
+let calcCur='0',calcPrev=null,calcOperator=null,calcReset=false;
+function calcDisply(){const d=document.getElementById('calc-disp');if(d)d.textContent=calcCur;}
+function calcNum(n){if(calcReset){calcCur='0';calcReset=false;}if(n==='.'&&calcCur.includes('.'))return;calcCur=calcCur==='0'?(n==='.'?'0.':n):calcCur+n;calcDisply();}
+function calcAct(a){if(a==='clear'){calcCur='0';calcPrev=null;calcOperator=null;}else if(a==='neg'){calcCur=String(parseFloat(calcCur)*-1);}else if(a==='pct'){calcCur=String(parseFloat(calcCur)/100);}calcDisply();}
+function calcOp(o){if(calcOperator&&!calcReset){calcEq();}calcPrev=parseFloat(calcCur);calcOperator=o;calcReset=true;}
+function calcEq(){if(calcOperator===null||calcPrev===null)return;const a=calcPrev,b=parseFloat(calcCur);let r=0;if(calcOperator==='+')r=a+b;else if(calcOperator==='-')r=a-b;else if(calcOperator==='×')r=a*b;else if(calcOperator==='÷')r=b===0?0:a/b;calcCur=String(Math.round(r*1e10)/1e10);calcPrev=null;calcOperator=null;calcReset=true;calcDisply();}
+
+// ============ 音乐 ============
+let npTimer=null,npProg=0;
+const songs=[{n:'起风了',a:'买辣椒也用券',d:325},{n:'平凡之路',a:'朴树',d:300},{n:'夜空中最亮的星',a:'逃跑计划',d:248},{n:'海阔天空',a:'Beyond',d:325},{n:'明天会更好',a:'群星',d:288}];
+function playSong(i){
+  document.querySelectorAll('.song-row').forEach((r,j)=>r.classList.toggle('playing',j===i));
+  document.getElementById('np-bar').style.display='flex';
+  document.getElementById('np-name').textContent=songs[i].n+' - '+songs[i].a;
+  if(npTimer)clearInterval(npTimer);
+  npProg=0;
+  const fill=document.getElementById('np-prog-fill');const time=document.getElementById('np-time');
+  fill.style.width='0%';
+  npTimer=setInterval(()=>{npProg++;const pct=Math.min(100,npProg/songs[i].d*100);fill.style.width=pct+'%';const mm=Math.floor(npProg/60),ss=String(npProg%60).padStart(2,'0');time.textContent=mm+':'+ss;if(npProg>=songs[i].d)clearInterval(npTimer);},1000);
+}
+
+// ============ 备忘录 ============
+const notes=[
+ {t:'读书摘抄',b:'《活着》——余华\n\n"人是为了活着本身而活着，而不是为了活着之外的任何事物而活着。"\n\n读完心里很平静。无论明天发生什么，先好好活着。'},
+ {t:'明天的待办',b:'1. 6:30 起床\n2. 带齐入职材料（身份证、学历证、银行卡、照片）\n3. 带换洗衣物和日用品\n4. 手机充满电\n5. 把保密协议再读一遍\n6. 到了上12楼找表姐'},
+ {t:'心里话',b:'说不上来哪里不对劲……\n\n工资高得离谱，又要保密又不让用手机，报到地点在城中村旧楼。\n表姐一直对我很好，应该不会害我吧？\n\n可万一呢……'}
+];
+function openNote(i){document.getElementById('note-detail-title').textContent=notes[i].t;document.getElementById('note-detail-body').textContent=notes[i].b;showScreen('note-detail-screen');}
+
+// ============ 日历 ============
+function renderCalendar(){
+  const grid=document.getElementById('cal-grid');
+  if(grid.children.length){showScreen('calendar-screen');return;}
+  ['日','一','二','三','四','五','六'].forEach(w=>{const h=document.createElement('div');h.style.cssText='font-size:11px;color:var(--c-text3);text-align:center;padding:4px 0';h.textContent=w;grid.appendChild(h);});
+  for(let i=0;i<1;i++){const c=document.createElement('div');c.style.cssText='aspect-ratio:1';grid.appendChild(c);}
+  for(let d=1;d<=31;d++){
+    const c=document.createElement('div');c.style.cssText='aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:50%;position:relative';
+    c.textContent=d;
+    if(d===16){c.style.background='var(--c-red)';c.style.color='#fff';c.style.fontWeight='600';}
+    else if(d===17){c.textContent=d;const dot=document.createElement('div');dot.style.cssText='position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:var(--c-amber)';c.appendChild(dot);}
+    grid.appendChild(c);
+  }
+  showScreen('calendar-screen');
+}
+
+// ============ 时钟 ============
+function renderClock(){
+  showScreen('clock-screen');
+  function tick(){
+    const now=new Date();
+    const set=(id,off)=>{const el=document.getElementById(id);if(!el)return;const t=new Date(now.getTime()+off*3600000);el.textContent=String(t.getUTCHours()).padStart(2,'0')+':'+String(t.getUTCMinutes()).padStart(2,'0');};
+    set('ct-bj',8);set('ct-lon',0);set('ct-ny',-5);set('ct-tk',9);
+  }
+  tick();clearInterval(window._ct);window._ct=setInterval(tick,30000);
+}
+</script>
+</body>
+</html>
