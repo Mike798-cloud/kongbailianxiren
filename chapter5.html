@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>空白联系人 · 终章</title>
+<link rel="stylesheet" href="paywall.css">
+<script src="paywall.js" defer></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --phone-w:380px;--phone-h:760px;
+  --c-bg:#0f1115;--c-surface:#1a1d24;--c-surface2:#222630;
+  --c-text:#e4e4e7;--c-text2:#9ca3af;--c-text3:#6b7280;
+  --c-blue:#3b82f6;--c-green:#22c55e;--c-red:#ef4444;
+  --c-amber:#f59e0b;--c-purple:#a855f7;--c-pink:#ec4899;--c-warm:#f0a060;
+}
+html,body{min-height:100%;background:var(--c-bg);font-family:-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;color:var(--c-text)}
+body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:8px}
+button,input{font:inherit}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--c-purple);outline-offset:2px}
+#phone-frame{width:min(var(--phone-w),calc(100vw - 16px));height:min(var(--phone-h),calc(100dvh - 16px));min-height:540px;background:#000;border-radius:42px;padding:10px;box-shadow:0 0 60px rgba(0,0,0,.5),0 0 0 2px #2a2a2a,0 0 120px rgba(168,85,247,.08);position:relative;overflow:hidden}
+#phone-screen{width:100%;height:100%;background:linear-gradient(180deg,#1a1820 0%,#1c1a24 30%,#181620 60%,#15131c 100%);border-radius:34px;overflow-y:auto;overflow-x:hidden;position:relative;scroll-behavior:smooth}
+#phone-screen::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 20%,rgba(168,85,247,.04),transparent 60%),radial-gradient(ellipse at 30% 80%,rgba(240,160,96,.03),transparent 50%);pointer-events:none;z-index:0}
+#phone-screen>*{position:relative;z-index:1}#phone-screen::-webkit-scrollbar{width:0}
+.status-bar{height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:13px;font-weight:600;background:var(--c-surface);position:sticky;top:0;z-index:50}
+.status-icons{display:flex;gap:6px;align-items:center}.sig{display:flex;align-items:flex-end;gap:1.5px;height:11px}.sig i{width:3px;background:var(--c-text);border-radius:1px}.sig i:nth-child(1){height:4px}.sig i:nth-child(2){height:6px}.sig i:nth-child(3){height:8px}.sig i:nth-child(4){height:11px}
+.wifi{position:relative;width:15px;height:11px}.wifi::before,.wifi::after{content:"";position:absolute;left:50%;border:1.6px solid var(--c-text);border-radius:50%;border-bottom-color:transparent;border-left-color:transparent;border-right-color:transparent;transform:translateX(-50%)}.wifi::before{width:10px;height:10px;top:0}.wifi::after{width:5px;height:5px;top:4px}
+.batt{width:24px;height:12px;border:1px solid var(--c-text2);border-radius:3px;padding:1.5px;position:relative}.batt::after{content:"";position:absolute;right:-3px;top:3.5px;width:2px;height:5px;background:var(--c-text2)}.batt-fill{display:block;width:38%;height:100%;background:var(--c-red);border-radius:1px}
+#chapter-transition{position:absolute;inset:0;z-index:300;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center}.chapter-transition-hide{opacity:0;pointer-events:none;transition:opacity 1s}.ch-intro-num{font-size:11px;color:var(--c-purple);letter-spacing:8px;margin-bottom:14px;animation:fadeUp .8s both .2s}.ch-intro-title{font-size:28px;letter-spacing:6px;font-weight:300;margin-bottom:10px;animation:fadeUp .8s both .5s}.ch-intro-sub{font-size:12px;color:var(--c-red);letter-spacing:4px;margin-bottom:30px;animation:fadeUp .8s both .8s}.ch-intro-bar{width:180px;height:1px;background:var(--c-surface2);overflow:hidden;animation:fadeUp .8s both 1s}.ch-intro-bar-fill{height:100%;width:0;background:var(--c-purple);transition:width 2.5s ease}@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.content{padding:20px;min-height:calc(100% - 36px)}.content-title{font-size:20px;font-weight:600;margin-bottom:6px}.content-sub{font-size:12px;color:var(--c-text3);margin-bottom:20px}.progress-bar{height:3px;background:var(--c-surface2);border-radius:2px;margin-bottom:9px;overflow:hidden}.progress-fill{height:100%;background:linear-gradient(90deg,var(--c-blue),var(--c-purple));transition:width .6s ease}.progress-label{font-size:11px;color:var(--c-text3);margin-bottom:16px;text-align:center}
+.steps{display:flex;gap:6px;margin-bottom:24px;justify-content:center;align-items:center}.step-dot{width:28px;height:28px;border-radius:50%;border:1px solid var(--c-surface2);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--c-text3);transition:.4s;flex-shrink:0}.step-dot.active{border-color:var(--c-purple);color:var(--c-purple);box-shadow:0 0 12px rgba(168,85,247,.3)}.step-dot.done{background:var(--c-purple);color:#fff;border-color:var(--c-purple)}.step-line{width:20px;height:1px;background:var(--c-surface2)}.step-line.done{background:var(--c-purple)}
+.puzzle-section{background:var(--c-surface2);border-radius:12px;padding:20px;margin-bottom:16px}.puzzle-title{font-size:15px;font-weight:600;margin-bottom:6px}.puzzle-desc{font-size:12px;color:var(--c-text3);margin-bottom:16px;line-height:1.6}.puzzle-hint{font-size:11px;color:var(--c-amber);margin-top:10px;line-height:1.6}
+.evidence-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}.evidence-card{background:var(--c-surface);border:1px solid var(--c-surface2);border-radius:10px;padding:14px;cursor:pointer;transition:.3s;position:relative;overflow:hidden;user-select:none;min-height:93px}.evidence-card:hover{border-color:var(--c-blue);transform:translateY(-2px)}.evidence-card:active{transform:scale(.97)}.evidence-card.collected{border-color:var(--c-green);background:rgba(34,197,94,.05)}.evidence-card.collected::after{content:"";position:absolute;top:10px;right:10px;width:16px;height:16px;border-radius:50%;background:var(--c-green)}.evidence-card.collected::before{content:"";position:absolute;top:13px;right:13px;width:8px;height:4px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg);z-index:1}
+.evidence-icon-box{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;position:relative}.evidence-name{font-size:13px;font-weight:500}.evidence-chapter{font-size:10px;color:var(--c-text3);margin-top:2px}.ev-icon-scam{background:rgba(239,68,68,.12)}.ev-icon-scam::before{content:"";width:14px;height:14px;border:2px solid var(--c-red);border-radius:3px}.ev-icon-lock{background:rgba(245,158,11,.12)}.ev-icon-lock::before{content:"";width:12px;height:9px;border:2px solid var(--c-amber);border-radius:2px;margin-top:5px}.ev-icon-lock::after{content:"";position:absolute;width:8px;height:6px;border:2px solid var(--c-amber);border-bottom:none;border-radius:5px 5px 0 0;top:6px}.ev-icon-heart{background:rgba(236,72,153,.12)}.ev-icon-heart::before{content:"♥";font-size:20px;color:var(--c-pink)}.ev-icon-blank{background:rgba(107,114,128,.12)}.ev-icon-blank::before{content:"";width:12px;height:12px;border:2px dashed var(--c-text3);border-radius:50%}
+.hidden-clue{background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);border-radius:10px;padding:16px;margin-bottom:12px;display:none}.hidden-clue.show{display:block;animation:revealClue 1s}@keyframes revealClue{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:none}}.hidden-clue-title{font-size:13px;color:var(--c-purple);font-weight:600;margin-bottom:8px}.hidden-clue-text{font-size:12px;color:var(--c-text2);line-height:1.8}.hotspot{display:inline-block;cursor:pointer;color:var(--c-text3);border-bottom:1px dotted var(--c-text3)}.hotspot:hover,.hotspot.found{color:var(--c-purple);border-bottom-color:var(--c-purple)}
+.verify-btn{display:block;width:100%;padding:14px;background:var(--c-blue);color:#fff;border:none;border-radius:12px;font-size:15px;cursor:pointer;letter-spacing:2px;transition:.3s;margin-bottom:12px}.verify-btn:hover{background:#2978e0;box-shadow:0 4px 20px rgba(59,130,246,.3)}.verify-btn:disabled{opacity:.55;cursor:not-allowed}.verify-btn.success{background:var(--c-green)}
+.code-input-area{display:flex;gap:6px;justify-content:center;margin:16px 0}.code-digit{width:36px;height:48px;background:var(--c-surface);border:2px solid var(--c-surface2);color:var(--c-text);font-size:20px;text-align:center;border-radius:8px;outline:none;transition:.3s;min-width:0}.code-digit:focus{border-color:var(--c-purple);box-shadow:0 0 12px rgba(168,85,247,.2)}.code-digit.error{border-color:var(--c-red);animation:shake .4s}@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.reversal-section{display:none;padding:16px 0}.reversal-section.show{display:block;animation:revealClue 1.5s}.reversal-title{font-size:22px;text-align:center;font-weight:300;letter-spacing:4px;margin-bottom:20px}.reversal-1{color:var(--c-amber)}.reversal-2{color:var(--c-pink)}.reversal-text{font-size:14px;line-height:2.2;color:var(--c-text2);margin-bottom:16px;text-align:justify}.reversal-text p{margin-bottom:10px;opacity:0;transform:translateY(8px);transition:.6s}.reversal-text p.show{opacity:1;transform:none}.reversal-text .highlight{color:var(--c-text);font-weight:600}.reversal-text .shock{color:var(--c-red);font-weight:bold;font-size:16px}.reversal-text .warm{color:var(--c-warm)}.reversal-quote{text-align:center;font-size:16px;color:var(--c-text);font-style:italic;line-height:2;padding:20px;background:rgba(255,255,255,.03);border-radius:12px;margin:16px 0}
+.choice-area{margin-top:24px}.choice-intro{text-align:center;font-size:13px;color:var(--c-text2);line-height:2;margin-bottom:20px;padding:16px;background:rgba(168,85,247,.06);border-radius:12px;border:1px solid rgba(168,85,247,.15)}.choice-btn{display:block;width:100%;padding:16px;background:var(--c-surface2);border:1px solid var(--c-surface2);color:var(--c-text);font-size:14px;cursor:pointer;border-radius:12px;margin-bottom:12px;transition:.3s;text-align:left;line-height:1.6;position:relative}.choice-btn:hover{border-color:var(--c-blue);background:var(--c-surface);transform:translateX(4px)}.choice-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}.choice-label{font-weight:600;color:var(--c-blue);display:block;margin-bottom:4px;font-size:15px;letter-spacing:2px}
+.ending-section{display:none;text-align:center;padding:30px 0}.ending-section.show{display:block;animation:revealClue 2s}.ending-title{font-size:22px;font-weight:300;letter-spacing:6px;margin-bottom:6px}.ending-sub{font-size:12px;color:var(--c-text3);letter-spacing:3px;margin-bottom:30px}.ending-line{font-size:14px;color:var(--c-text2);line-height:2.2;text-align:left;margin-bottom:4px;opacity:0;transform:translateY(10px);transition:.8s}.ending-line.show{opacity:1;transform:none}.ending-divider{width:60px;height:1px;background:var(--c-surface2);margin:24px auto;opacity:0;transition:.8s}.ending-divider.show{opacity:1}.ending-message{font-size:13px;color:var(--c-text3);line-height:2;text-align:center;margin-bottom:20px;opacity:0;transition:.8s}.ending-message.show{opacity:1}.post-ending{display:none;text-align:center;padding:24px 0;margin-top:10px}.post-ending.show{display:block;animation:revealClue 1.5s}.post-ending-hint{font-size:12px;color:var(--c-text3);line-height:2;margin-bottom:16px;font-style:italic;white-space:pre-line}.post-ending-count{font-size:11px;color:var(--c-purple);margin-bottom:20px}.replay-btn{display:block;margin:0 auto;padding:12px 20px;background:transparent;border:1px solid var(--c-text3);color:var(--c-text2);font-size:14px;letter-spacing:3px;cursor:pointer;border-radius:8px;text-decoration:none;text-align:center;transition:.3s}.replay-btn:hover{border-color:var(--c-purple);color:var(--c-purple);box-shadow:0 0 20px rgba(168,85,247,.15)}
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.9);color:#fff;padding:16px 24px;border-radius:12px;font-size:13px;z-index:9999;opacity:0;pointer-events:none;transition:.4s;max-width:min(300px,85vw);text-align:center;line-height:1.8;white-space:pre-line}.toast.show{opacity:1}.hidden-ending-mark{position:absolute;top:45px;right:12px;font-size:10px;color:var(--c-purple);background:rgba(168,85,247,.15);padding:4px 10px;border-radius:4px;z-index:100;display:none}.hidden-ending-mark.show{display:block;animation:revealClue .6s}
+#loading-overlay{position:absolute;inset:0;z-index:400;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px}#loading-overlay.show{display:flex;animation:fadeIn .4s}@keyframes fadeIn{from{opacity:0}to{opacity:1}}.loading-text{font-size:13px;color:var(--c-text2);letter-spacing:2px}.loading-dots{display:flex;gap:6px}.loading-dots span{width:8px;height:8px;border-radius:50%;background:var(--c-purple);animation:loadingPulse 1.2s infinite}.loading-dots span:nth-child(2){animation-delay:.2s}.loading-dots span:nth-child(3){animation-delay:.4s}@keyframes loadingPulse{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1}}
+@media(max-width:380px){#phone-frame{padding:7px;border-radius:30px}#phone-screen{border-radius:24px}.content{padding:16px}.puzzle-section{padding:16px}.code-input-area{gap:3px}.code-digit{height:44px;font-size:18px}.evidence-grid{gap:8px}.evidence-card{padding:12px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div id="phone-frame">
+  <div id="phone-screen">
+    <div class="status-bar">
+      <span id="status-time">09:41</span>
+      <div class="status-icons"><div class="sig"><i></i><i></i><i></i><i></i></div><div class="wifi"></div><div class="batt"><div class="batt-fill"></div></div></div>
+    </div>
+    <div class="hidden-ending-mark" id="hidden-mark"></div>
+    <div id="chapter-transition">
+      <div class="ch-intro-num">终 章</div><div class="ch-intro-title">未 接 归 途</div><div class="ch-intro-sub">最后的真相，等你揭开</div>
+      <div class="ch-intro-bar"><div class="ch-intro-bar-fill" id="ch-bar"></div></div>
+    </div>
+
+    <main class="content" id="main-content" style="display:none">
+      <div class="content-title">最终解谜</div><div class="content-sub">整合所有线索，揭开最后的真相</div>
+      <div class="progress-bar"><div class="progress-fill" id="prog" style="width:60%"></div></div><div class="progress-label" id="prog-label">全局线索串联 · 60%</div>
+      <div class="steps"><div class="step-dot active" id="step1">1</div><div class="step-line" id="line1"></div><div class="step-dot" id="step2">2</div><div class="step-line" id="line2"></div><div class="step-dot" id="step3">3</div><div class="step-line" id="line3"></div><div class="step-dot" id="step4">4</div></div>
+
+      <section id="step1-area">
+        <div class="puzzle-section">
+          <div class="puzzle-title">① 回顾全程</div><div class="puzzle-desc">整合前序章节的全部线索。点击卡片，重新走过每一段回忆——有些回忆，值得多看几遍。</div>
+          <div class="evidence-grid">
+            <div class="evidence-card" id="ev1" role="button" tabindex="0" data-evidence="1"><div class="evidence-icon-box ev-icon-scam"></div><div class="evidence-name">骗局证据</div><div class="evidence-chapter">第二章 · 裂痕初现</div></div>
+            <div class="evidence-card" id="ev2" role="button" tabindex="0" data-evidence="2"><div class="evidence-icon-box ev-icon-lock"></div><div class="evidence-name">自救记录</div><div class="evidence-chapter">第三章 · 囚笼残响</div></div>
+            <div class="evidence-card" id="ev3" role="button" tabindex="0" data-evidence="3"><div class="evidence-icon-box ev-icon-heart"></div><div class="evidence-name">家人留言</div><div class="evidence-chapter">第四章 · 空白来电</div></div>
+            <div class="evidence-card" id="ev4" role="button" tabindex="0" data-evidence="4"><div class="evidence-icon-box ev-icon-blank"></div><div class="evidence-name">空白联系人</div><div class="evidence-chapter">第四章 · 悬而未决</div></div>
+          </div>
+          <div class="puzzle-hint" id="ev-hint" style="opacity:.6">回忆散落在各处，轻轻触碰，它们就会回来。</div>
+        </div>
+      </section>
+
+      <section id="step2-area" style="display:none">
+        <div class="puzzle-section">
+          <div class="puzzle-title">② 终极隐藏线索</div><div class="puzzle-desc">翻开那部旧手机。有些细节，或许你从前未曾留意……</div>
+          <div style="font-size:13px;color:var(--c-text2);line-height:2.2;margin:12px 0;padding:16px;background:var(--c-surface);border-radius:10px">
+            <p>你翻开那部旧手机。</p>
+            <p style="margin-top:8px">开机画面闪过一行<span class="hotspot" id="hw" role="button" tabindex="0" data-clue="wallpaper">常驻小字</span>，你以前从没注意过。</p>
+            <p style="margin-top:8px">手机<span class="hotspot" id="hwp" role="button" tabindex="0" data-clue="wallpaper2">壁纸</span>是一张泛黄的全家福，拍摄日期显示是很多年前。</p>
+            <p style="margin-top:8px">备忘录翻到<span class="hotspot" id="hn" role="button" tabindex="0" data-clue="note">最底行</span>，那里有隐形文字，需要长按才能显示。</p>
+          </div>
+          <div class="hidden-clue" id="clue-wallpaper"><div class="hidden-clue-title">开机常驻小字</div><div class="hidden-clue-text">屏幕底部一行极小的灰色字：<br>“紧急联系：110 / 如果你看到了这个，请帮我回家。”<br>这是你在被困期间偷偷设置的，但从未成功拨出。</div></div>
+          <div class="hidden-clue" id="clue-wallpaper2"><div class="hidden-clue-title">手机壁纸</div><div class="hidden-clue-text">全家福照片的拍摄日期：2005年7月15日。<br>那是你5岁的生日。照片背面写着：“潮潮生日快乐，爸爸妈妈永远爱你。”</div></div>
+          <div class="hidden-clue" id="clue-note"><div class="hidden-clue-title">备忘录隐形文字</div><div class="hidden-clue-text">“空白联系人的号码是 13800007150。那是妈妈的号码。<br>我拉黑了她，但她每天都在打。”<br>“密码：0715 —— 我的生日，也是妈妈的生日。”</div></div>
+          <div class="puzzle-hint" id="clue-hint" style="opacity:.6">点击文字中三个带虚线的细节。</div>
+        </div>
+      </section>
+
+      <section id="step3-area" style="display:none">
+        <div class="puzzle-section">
+          <div class="puzzle-title">③ 亲情时间密码</div><div class="puzzle-desc">不是数字密码，是亲情时间密码。<br>那些刻在生命里的日子，组合起来，就是答案。</div>
+          <div class="code-input-area" id="code-input-area" aria-label="输入8位密码">
+            <input type="text" class="code-digit" maxlength="1" id="cd1" inputmode="numeric" aria-label="第1位"><input type="text" class="code-digit" maxlength="1" id="cd2" inputmode="numeric" aria-label="第2位"><input type="text" class="code-digit" maxlength="1" id="cd3" inputmode="numeric" aria-label="第3位"><input type="text" class="code-digit" maxlength="1" id="cd4" inputmode="numeric" aria-label="第4位"><input type="text" class="code-digit" maxlength="1" id="cd5" inputmode="numeric" aria-label="第5位"><input type="text" class="code-digit" maxlength="1" id="cd6" inputmode="numeric" aria-label="第6位"><input type="text" class="code-digit" maxlength="1" id="cd7" inputmode="numeric" aria-label="第7位"><input type="text" class="code-digit" maxlength="1" id="cd8" inputmode="numeric" aria-label="第8位">
+          </div>
+          <button class="verify-btn" id="verify-code" type="button">验 证 密 码</button><div class="puzzle-hint" id="code-feedback" style="text-align:center" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section id="step4-area" style="display:none">
+        <div class="reversal-section" id="reversal1">
+          <div style="text-align:center;margin-bottom:12px"><button id="skip-reversal-btn" type="button" style="background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);color:var(--c-purple);padding:8px 20px;border-radius:20px;font-size:12px;cursor:pointer;letter-spacing:2px">跳过动画 &gt;&gt;</button></div>
+          <h2 class="reversal-title reversal-1">反 转 · 一</h2>
+          <div class="reversal-text" id="rev1-text">
+            <p>密码验证通过。最终文件解锁——</p><p>你颤抖着点开那份文件。屏幕上跳出的不是传销证据，也不是自救记录。</p><p>是一份<span class="highlight">通话记录</span>。</p><p>那个你一直在追查的「<span class="shock">空白联系人</span>」，号码是 <strong>13800007150</strong>。</p><p class="reversal-quote">“你以为的空白，是你亲手屏蔽的全世界的温柔。”</p><p>这个号码，在过去一年里，给你打了 <span class="shock">1,247次</span> 电话。每一次都显示“已拒接”——因为你在黑名单里。</p><p>你想起那3秒里，电话那头沙哑、颤抖、带着哭腔的声音。</p><p class="shock">那是妈妈的声音。</p><p>骗子千方百计骗你入局，<br><span class="warm">家人千方百计等你回家。</span></p>
+          </div>
+        </div>
+        <div class="reversal-section" id="reversal2">
+          <h2 class="reversal-title reversal-2">反 转 · 二</h2>
+          <div class="reversal-text" id="rev2-text">
+            <p>你继续往下翻。最终文件的最后一页，是一份<strong>报警记录</strong>。</p><p>记录显示：<span class="highlight">去年8月15日</span>，你的母亲到派出所报案。今年4月12日，警方在传销窝点解救出 <strong>11名</strong> 被困人员。</p><p>你的名字，在获救名单上。</p><p class="shock">但你记得——你还在这里。</p><p>你低头看向自己的手。半透明的。屏幕的光穿过了你的手指。</p><p class="reversal-quote">“你之前所有的‘自救操作’，不是游戏操作。<br>是现实里的你一次次挣扎求救的真实痕迹。”</p><p>你成功把信息传递了出去。妈妈带着警察找到了那个地方。</p><p>但你——</p><p class="shock">在发出最后一条信息的那天夜里，你被发现了。</p><p class="warm">他们带走了你。你再也没有回来。</p><p>11个人因为你的勇气活了下来。而你，成了那个“空白联系人”。</p>
+          </div>
+        </div>
+        <div class="choice-area" id="choice-area" style="display:none">
+          <div class="choice-intro">如果你还能对家人说一句话——<br>你会说什么？</div>
+          <button class="choice-btn" type="button" data-ending="sorry"><span class="choice-label">「对不起」</span>对不起，我应该早点接电话的。对不起，我不该拉黑你们。</button>
+          <button class="choice-btn" type="button" data-ending="love"><span class="choice-label">「我爱你们」</span>我从来没说过这句话。但我一直都知道。</button>
+          <button class="choice-btn" type="button" data-ending="home"><span class="choice-label">「我想回家」</span>妈，我想回家。我想吃你包的饺子。</button>
+        </div>
+        <div class="ending-section" id="ending-section">
+          <h2 class="ending-title" id="end-title"></h2><p class="ending-sub" id="end-sub"></p><div id="end-lines"></div><div class="ending-divider" id="end-divider"></div><div class="ending-message" id="end-message"></div>
+          <div class="post-ending" id="post-ending"><div class="post-ending-hint" id="post-ending-hint"></div><div class="post-ending-count" id="post-ending-count"></div><a href="index.html" class="replay-btn">再 听 一 次 潮 声</a><button class="support-ending-btn" type="button" id="support-ending-btn">支持作者 · 1元</button></div>
+        </div>
+      </section>
+    </main>
+    <div id="loading-overlay"><div class="loading-text">最终文件解锁中</div><div class="loading-dots"><span></span><span></span><span></span></div></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+const state={evidence:{1:false,2:false,3:false,4:false},evidenceCount:0,clues:{wallpaper:false,wallpaper2:false,note:false},clueCount:0,codeVerified:false,codeAttempts:0,firstTryCorrect:false,ev3Clicks:0,currentStep:1,endedEnding:null};
+const timers=new Set();let reversalSkipped=false;let choiceShown=false;let codeInputsReady=false;let endingLocked=false;
+const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function later(fn,delay){const id=setTimeout(()=>{timers.delete(id);fn();},reduceMotion?Math.min(delay,30):delay);timers.add(id);return id}
+function clearAllTimers(){timers.forEach(clearTimeout);timers.clear()}
+function safeStorageGet(key){try{return localStorage.getItem(key)}catch(e){return null}}
+function safeStorageSet(key,val){try{localStorage.setItem(key,val)}catch(e){}}
+function loadEndings(){try{return JSON.parse(safeStorageGet('blank_contact_endings')||'{}')||{}}catch(e){return {}}}
+function saveEnding(key){const data=loadEndings();data[key]=true;safeStorageSet('blank_contact_endings',JSON.stringify(data))}
+function getEndingCount(){return Object.keys(loadEndings()).length}
+function hideAllScreens(){['step1-area','step2-area','step3-area','step4-area'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none'})}
+function updateTime(){const now=new Date();const el=document.getElementById('status-time');if(el)el.textContent=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('show'),3500)}
+function updateProgress(force){let p=force||60+state.evidenceCount*5+state.clueCount*5;if(state.codeVerified)p=100;p=Math.max(0,Math.min(100,p));document.getElementById('prog').style.width=p+'%';document.getElementById('prog-label').textContent='全局线索串联 · '+p+'%'}
+function goToStep(step){state.currentStep=step;for(let i=1;i<=4;i++){const dot=document.getElementById('step'+i);dot.classList.toggle('done',i<step);dot.classList.toggle('active',i===step)}for(let j=1;j<=3;j++){document.getElementById('line'+j).classList.toggle('done',j<step)}hideAllScreens();const area=document.getElementById('step'+step+'-area');if(area)area.style.display='block';document.getElementById('phone-screen').scrollTo({top:0,behavior:reduceMotion?'auto':'smooth'})}
+const evidenceDetails={1:'第二章 · 裂痕初现\n\n你恢复了被删除的3条碎片。\n那些碎片里的字句，现在读来，字字惊心……',2:'第三章 · 囚笼残响\n\n碎片日记里的每一笔，都是你在黑暗中留下的挣扎。',3:'第四章 · 空白来电\n\n你恢复了9条被删除的短信。\n每一条，都是有人在等你回家。',4:'第四章 · 空白来电\n\n黑名单中的“空白联系人”。\n无姓名，但它被拉黑的时间最早。'};
+function collectEvidence(id){if(id===3){state.ev3Clicks++;if(state.evidence[3]){const moods=['……你又想起了妈妈发的短信。','“如果你还活着，给爸发个消息。”','你盯着这行字，眼眶发酸。','1,247次未接来电。你没有接。'];showToast(moods[(state.ev3Clicks-2)%moods.length])}}if(state.evidence[id])return;state.evidence[id]=true;state.evidenceCount++;document.getElementById('ev'+id).classList.add('collected');showToast(evidenceDetails[id]);updateProgress();if(state.evidenceCount===4){const hint=document.getElementById('ev-hint');hint.textContent='线索已归位。';hint.style.color='var(--c-green)';later(()=>goToStep(2),900)}}
+function findClue(type){if(state.clues[type])return;state.clues[type]=true;state.clueCount++;const map={wallpaper:['clue-wallpaper','hw'],wallpaper2:['clue-wallpaper2','hwp'],note:['clue-note','hn']};document.getElementById(map[type][0]).classList.add('show');document.getElementById(map[type][1]).classList.add('found');updateProgress();if(state.clueCount===3){const hint=document.getElementById('clue-hint');hint.textContent='三个隐藏细节已找到。';hint.style.color='var(--c-green)';later(()=>{goToStep(3);setupCodeInputs()},900)}}
+function fillCode(value){const digits=[...document.querySelectorAll('.code-digit')];const clean=String(value||'').replace(/\D/g,'').slice(0,8);digits.forEach((input,i)=>input.value=clean[i]||'');const focusIndex=Math.min(clean.length,7);if(digits[focusIndex])digits[focusIndex].focus()}
+function setupCodeInputs(){if(codeInputsReady)return;codeInputsReady=true;const digits=[...document.querySelectorAll('.code-digit')];digits.forEach((input,idx)=>{input.autocomplete='off';input.addEventListener('input',()=>{input.value=input.value.replace(/\D/g,'').slice(-1);if(input.value&&idx<digits.length-1)digits[idx+1].focus()});input.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!input.value&&idx>0){e.preventDefault();digits[idx-1].value='';digits[idx-1].focus()}else if(e.key==='ArrowLeft'&&idx>0){e.preventDefault();digits[idx-1].focus()}else if(e.key==='ArrowRight'&&idx<digits.length-1){e.preventDefault();digits[idx+1].focus()}else if(e.key==='Enter'){e.preventDefault();verifyCode()}});input.addEventListener('paste',e=>{e.preventDefault();fillCode((e.clipboardData||window.clipboardData).getData('text'))})});later(()=>digits[0].focus(),200)}
+function verifyCode(){if(state.codeVerified)return;const inputs=[...document.querySelectorAll('.code-digit')];const code=inputs.map(d=>d.value).join('');const feedback=document.getElementById('code-feedback');if(code.length<8){feedback.textContent='请输入完整的8位数字。';feedback.style.color='var(--c-amber)';return}state.codeAttempts++;if(code==='08150715'){state.codeVerified=true;state.firstTryCorrect=state.codeAttempts===1;feedback.textContent='';const btn=document.getElementById('verify-code');btn.textContent='验证通过';btn.classList.add('success');btn.disabled=true;inputs.forEach(i=>i.disabled=true);updateProgress(100);document.getElementById('loading-overlay').classList.add('show');later(()=>{document.getElementById('loading-overlay').classList.remove('show');goToStep(4);startReversal()},1000)}else{inputs.forEach(i=>i.classList.add('error'));later(()=>inputs.forEach(i=>i.classList.remove('error')),500);const hints=['密码不对。再想想那些刻在生命里的日子。','提示：密码是8位数字，由两个重要日期组合而成。','提示：8月15日 + 7月15日。','提示：0815 + 0715 = 08150715'];const n=Math.min(state.codeAttempts-1,hints.length-1);feedback.textContent=hints[n];feedback.style.color=n>=2?'var(--c-amber)':'var(--c-red)'}}
+function startReversal(){reversalSkipped=false;const r1=document.getElementById('reversal1');r1.classList.add('show');const p1=[...document.querySelectorAll('#rev1-text p')];p1.forEach((p,i)=>later(()=>p.classList.add('show'),250+i*520));const t1=250+p1.length*520+500;later(()=>{if(reversalSkipped)return;const r2=document.getElementById('reversal2');r2.classList.add('show');r2.style.display='block';r2.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});const p2=[...document.querySelectorAll('#rev2-text p')];p2.forEach((p,i)=>later(()=>p.classList.add('show'),250+i*520));later(()=>{if(!reversalSkipped){document.getElementById('skip-reversal-btn').style.display='none';showEndingChoice()}},250+p2.length*520+450)},t1)}
+function skipReversal(){clearAllTimers();reversalSkipped=true;document.querySelectorAll('#rev1-text p,#rev2-text p').forEach(p=>p.classList.add('show'));const r2=document.getElementById('reversal2');r2.classList.add('show');r2.style.display='block';document.getElementById('skip-reversal-btn').style.display='none';later(showEndingChoice,80)}
+function showEndingChoice(){if(choiceShown)return;choiceShown=true;const hidden=[];if(state.ev3Clicks>=3)hidden.push({type:'alt',label:'★ 如果当初',desc:'你反复翻看了家人的留言，触发了平行时空的回忆……'});if(state.clueCount>=3&&state.firstTryCorrect)hidden.push({type:'dawn',label:'★ 破晓',desc:'你找到了所有隐藏线索，且一次解开密码。无名英雄的故事即将揭晓……'});const area=document.getElementById('choice-area');if(hidden.length){const box=document.createElement('div');box.id='hidden-ending-options';box.style.cssText='margin-bottom:16px;padding:14px;background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);border-radius:12px';box.innerHTML='<div style="font-size:12px;color:var(--c-purple);font-weight:600;margin-bottom:10px">★ 隐藏结局已解锁</div>';hidden.forEach(item=>{const b=document.createElement('button');b.type='button';b.className='choice-btn';b.dataset.ending=item.type;b.innerHTML='<span class="choice-label" style="color:var(--c-purple)">'+item.label+'</span>'+item.desc;box.appendChild(b)});area.prepend(box)}area.style.display='block';area.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'center'})}
+const endings={
+ sorry:{key:'A',title:'对 不 起',sub:'迟 到 的 歉 意',lines:['这三个字，你在心里说了无数遍，','却再也没有机会说出口。','','妈妈在整理你的遗物时，','发现旧手机备忘录最后一行写着：','“对不起，妈。我应该接电话的。”','','她哭了很久。','然后把这句话刻在了你的墓碑上。'],message:'如果还有机会说出口，请不要等到来不及。'},
+ love:{key:'B',title:'我 爱 你',sub:'未 说 出 口 的 爱',lines:['你从来没有对父母说过这三个字。','你觉得别扭，觉得来日方长。','','在最后的那个夜里，','你用旧手机打出这三个字，想发给妈妈。','但信号被屏蔽了。','','消息永远留在草稿箱里。','妈妈后来看到它，把手机贴在胸口，哭了一整夜。'],message:'爱不该是草稿箱里永远发不出去的消息。'},
+ home:{key:'C',title:'想 回 家',sub:'最 远 的 归 途',lines:['妈妈包的饺子，是韭菜鸡蛋馅的。','你想起上次回家过年，嫌馅咸了，只吃了三个。','','后来在传销窝点的那个春节，','你饿得只能啃馒头。','','妈妈每年除夕都会多包一份饺子。','她说：“万一潮潮哪天回来了呢。”','那份饺子，年年包，年年倒掉。','但她从来没有停过。'],message:'家人做的饭，永远是世界上最好吃的味道。回家吧。'},
+ dawn:{key:'D',title:'破 晓',sub:'无 名 英 雄',lines:['你找到了所有隐藏线索。','每一处都是你留下的求救痕迹。','','在发出最后一条信息的那天夜里，','你被发现了。','','但求救信息成功传递了出去。','妈妈收到了。警察收到了。','','11个人获救。','11个家庭团圆。','而你，成为那个永远没有被叫出名字的人。'],message:'你不需要被记住名字。有人因为你而活着。'},
+ alt:{key:'E',title:'如 果 当 初',sub:'平 行 时 空',lines:['如果你当初接了那个电话呢？','','手机响了。来电显示：妈妈。','你犹豫了一下，按下接听键。','','“潮潮？”妈妈的声音。','“妈，我想回家。”你哭了。','','那天你回家了。','后来警方根据你提供的线索，捣毁了那个窝点。','','有些选择，一念之间。','而那一念，就是一辈子。'],message:'现实中没有“如果”。请现在就拨打那个电话。'}
+};
+function chooseEnding(type){if(endingLocked||state.endedEnding)return;const ending=endings[type];if(!ending)return;endingLocked=true;state.endedEnding=ending.key;saveEnding(ending.key);document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true);document.getElementById('choice-area').style.display='none';const section=document.getElementById('ending-section');section.style.display='block';section.classList.add('show');document.getElementById('end-title').textContent=ending.title;document.getElementById('end-sub').textContent=ending.sub;const lines=document.getElementById('end-lines');lines.innerHTML='';ending.lines.forEach((line,i)=>{const d=document.createElement('div');d.className='ending-line';if(!line){d.innerHTML='&nbsp;';d.style.height='12px'}else d.textContent=line;lines.appendChild(d);later(()=>d.classList.add('show'),200+i*300)});const total=200+ending.lines.length*300+300;later(()=>document.getElementById('end-divider').classList.add('show'),total);later(()=>{const msg=document.getElementById('end-message');msg.textContent='—— '+ending.message+' ——';msg.classList.add('show')},total+300);later(showPostEnding,total+900);section.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'})}
+function showSupportPaywall(){if(window.Paywall)window.Paywall.show({title:'支持《空白联系人》',price:'1元',studio:'abc studio',qrCode:'paycode.png'});else showToast('支持组件尚未加载，请稍后重试。')}
+function showPostEnding(){const hints=['风还在吹。\n有些故事，或许并没有结束……','你走过了另一条路。\n但远方，似乎还有别的声音在呼唤……','又一种可能，如潮水般退去。\n海面之下，也许还藏着什么……','你似乎触到了什么。\n有些东西，还在更深的暗处等着……','所有的路，你都走过了。\n但现实中，你只有一次机会。\n请珍惜每一个可以拨通的电话。'];const total=getEndingCount();document.getElementById('post-ending-hint').textContent=hints[Math.min(Math.max(total-1,0),hints.length-1)];document.getElementById('post-ending-count').style.display='none';const post=document.getElementById('post-ending');post.classList.add('show');post.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'center'});let prompted=false;try{prompted=sessionStorage.getItem('_blank_contact_support_prompted')==='1';if(!prompted)sessionStorage.setItem('_blank_contact_support_prompted','1')}catch(e){}if(!prompted)later(showSupportPaywall,900)}
+function activateFromKeyboard(event,callback){if(event.key==='Enter'||event.key===' '){event.preventDefault();callback()}}
+document.addEventListener('click',e=>{const ev=e.target.closest('[data-evidence]');if(ev){collectEvidence(Number(ev.dataset.evidence));return}const clue=e.target.closest('[data-clue]');if(clue){findClue(clue.dataset.clue);return}const ending=e.target.closest('[data-ending]');if(ending){chooseEnding(ending.dataset.ending)}});
+document.addEventListener('keydown',e=>{const ev=e.target.closest&&e.target.closest('[data-evidence]');if(ev)activateFromKeyboard(e,()=>collectEvidence(Number(ev.dataset.evidence)));const clue=e.target.closest&&e.target.closest('[data-clue]');if(clue)activateFromKeyboard(e,()=>findClue(clue.dataset.clue))});
+document.getElementById('verify-code').addEventListener('click',verifyCode);document.getElementById('skip-reversal-btn').addEventListener('click',skipReversal);document.getElementById('support-ending-btn').addEventListener('click',showSupportPaywall);
+window.addEventListener('load',()=>{updateTime();later(()=>document.getElementById('ch-bar').style.width='100%',120);later(()=>{const t=document.getElementById('chapter-transition');t.classList.add('chapter-transition-hide');later(()=>{t.style.display='none';document.getElementById('main-content').style.display='block'},700)},1700)});
+window.addEventListener('pagehide',clearAllTimers);setInterval(updateTime,30000);
+window.__blankContactGame={state,collectEvidence,findClue,goToStep,setupCodeInputs,fillCode,verifyCode,skipReversal,showEndingChoice,chooseEnding,showPostEnding,showSupportPaywall};
+})();
+</script>
+</body>
+</html>
